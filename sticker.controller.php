@@ -17,7 +17,7 @@ class stickerController extends sticker
 		$this->module_config->start_time = date('YmdHis');
 	}
 
-	function triggerDeleteMember(&$obj)
+	function triggerDeleteMember($obj)
 	{
 		$member_srl = $obj->member_srl;
 		if (!$member_srl)
@@ -29,7 +29,7 @@ class stickerController extends sticker
 		return $this->createObject();
 	}
 
-	function triggerBeforeModuleInit(&$obj)
+	function triggerBeforeModuleInit($obj)
 	{
 		if (!Context::get('is_logged'))
 		{
@@ -43,14 +43,14 @@ class stickerController extends sticker
 		{
 			Context::loadLang('./modules/sticker/lang/lang.xml');
 
-			$oMemberController = getController('member');
+			$oMemberController = MemberController::getInstance();
 			$oMemberController->addMemberMenu('dispStickerMylist', 'cmd_sticker_mypage');
 		}
 
 		return $this->createObject();
 	}
 
-	function triggerMemberMenu(&$obj)
+	function triggerMemberMenu($obj)
 	{
 		$member_srl = Context::get('target_srl');
 		$mid = Context::get('cur_mid');
@@ -92,7 +92,7 @@ class stickerController extends sticker
 		return $this->createObject();
 	}
 
-	function triggerBeforeInsertDocument(&$obj)
+	function triggerBeforeInsertDocument($obj)
 	{
 
 		$oStickerModel = getModel('sticker');
@@ -109,7 +109,7 @@ class stickerController extends sticker
 		$obj->content = $content;
 	}
 
-	function triggerBeforeUpdateDocument(&$obj)
+	function triggerBeforeUpdateDocument($obj)
 	{
 
 		$oStickerModel = getModel('sticker');
@@ -126,7 +126,7 @@ class stickerController extends sticker
 		$obj->content = $content;
 	}
 
-	function triggerBeforeInsertComment(&$obj)
+	function triggerBeforeInsertComment($obj)
 	{
 
 		$oStickerModel = getModel('sticker');
@@ -181,7 +181,7 @@ class stickerController extends sticker
 
 	}
 
-	function triggerBeforeUpdateComment(&$obj)
+	function triggerBeforeUpdateComment($obj)
 	{
 
 		$oStickerModel = getModel('sticker');
@@ -241,7 +241,7 @@ class stickerController extends sticker
 	}
 
 
-	function triggerBeforeDisplay(&$obj)
+	function triggerBeforeDisplay($obj)
 	{
 		if (!Context::get('document_srl'))
 		{
@@ -1666,7 +1666,7 @@ class stickerController extends sticker
 
 	}
 
-	function updateReadedCount(&$oSticker)
+	function updateReadedCount($oSticker)
 	{
 		if (isCrawler())
 		{
