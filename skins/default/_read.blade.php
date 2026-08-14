@@ -30,9 +30,9 @@
 	@endif
 
 	<div class="stk-view__content xe_content">
-		<!--BeforeDocument({$sticker->sticker_srl},{$sticker->member_srl})-->
+		<!--BeforeDocument({{ $sticker->sticker_srl }},{{ $sticker->member_srl }})-->
 		{!! $sticker->content !!}
-		<!--AfterDocument({$sticker->sticker_srl},{$sticker->member_srl})-->
+		<!--AfterDocument({{ $sticker->sticker_srl }},{{ $sticker->member_srl }})-->
 	</div>
 
 	@if($sticker->start_date || $sticker->end_date || $sticker->exptime || $sticker->buy_limit)
