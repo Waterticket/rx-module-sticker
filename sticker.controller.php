@@ -71,14 +71,13 @@ class stickerController extends sticker
 			return $this->createObject();
 		}
 
-		if ($member_srl == $logged_info->member_srl)
+		if ($logged_info && $member_srl === $logged_info->member_srl)
 		{
 			$member_info = $logged_info;
 		}
 		else
 		{
-			$oMemberModel = getModel('member');
-			$member_info = $oMemberModel->getMemberInfoByMemberSrl($member_srl);
+			$member_info = MemberModel::getMemberInfoByMemberSrl($member_srl);
 		}
 
 		if (!$member_info->user_id)
@@ -87,7 +86,7 @@ class stickerController extends sticker
 		}
 
 		$url = getUrl('', 'mid', 'sticker', 'search_target', 'nick_name', 'search_keyword', $member_info->nick_name);
-		$oMemberController = getController('member');
+		$oMemberController = MemberController::getInstance();
 		$oMemberController->addMemberPopupMenu($url, 'cmd_view_own_sticker', '');
 
 		return $this->createObject();
@@ -266,9 +265,10 @@ class stickerController extends sticker
 		if (!empty($output->data))
 		{
 			$data = $output->data;
-			$file_name = substr($data->file_name, 0, strrpos($data->file_name, "."));
+			$file_name = (string)$data->file_name;
+			$file_name = ($pos = strrpos($file_name, ".")) === false ? $file_name : substr($file_name, 0, $pos);
 			//!!!S
-			if (!$_COOKIE['txtmode'])
+			if (empty($_COOKIE['txtmode']))
 			{
 				$part = '<!--BeforeComment(' . $matches[1] . ',' . $matches[2] . ')--><div class="comment_' . $matches[1] . '_' . $matches[2] . ' xe_content"><a href="/?mid=sticker&sticker_srl=' . $data->sticker_srl . '" title="' . $data->title . '" style="display:block;background-image:url(' . $data->url . ');background-size:cover;background-position:50% 50%;width:140px !important;height:140px !important;border-radius:3px;" alt="' . $file_name . '"></a></div><!--AfterComment(' . $matches[1] . ',' . $matches[2] . ')-->';
 			}
@@ -296,12 +296,13 @@ class stickerController extends sticker
 	{
 		$sticker_srl = Context::get('sticker_srl');
 		$logged_info = Context::get('logged_info');
-		$member_srl = $logged_info->member_srl;
 
 		if (!$logged_info || !$sticker_srl)
 		{
 			return $this->createObject(-1, 'msg_invalid_access');
 		}
+
+		$member_srl = $logged_info->member_srl;
 
 		if (!$this->grant->buy)
 		{
@@ -402,13 +403,14 @@ class stickerController extends sticker
 		$sticker_srl = Context::get('sticker_srl');
 		$logged_info = Context::get('logged_info');
 		$move = Context::get('move');
-		$member_srl = $logged_info->member_srl;
-		$date = $this->module_config->start_time;
 
-		if (!$logged_info || !$sticker_srl || !$move || !($move && in_array($move, array('up', 'down'))))
+		if (!$logged_info || !$sticker_srl || !$move || !in_array($move, array('up', 'down')))
 		{
 			return $this->createObject(-1, 'msg_invalid_access');
 		}
+
+		$member_srl = $logged_info->member_srl;
+		$date = $this->module_config->start_time;
 
 		$args = new stdClass();
 		$args->member_srl = $member_srl;
@@ -644,7 +646,8 @@ class stickerController extends sticker
 
 		$this->setMessage('success_deleted');
 
-
+		$returnUrl = Context::get('success_return_url') ? Context::get('success_return_url') : getNotEncodedUrl('', 'mid', Context::get('mid'), 'act', '', 'sticker_srl', '');
+		$this->setRedirectUrl($returnUrl);
 	}
 
 
@@ -778,13 +781,13 @@ class stickerController extends sticker
 		}
 
 		// 제목 유무 체크
-		if (!$obj->title)
+		if (empty($obj->title))
 		{
 			return $this->createObject(-1, 'unknown title');
 		}
 
 		//빈 내용인지 체크
-		if (!$obj->content)
+		if (empty($obj->content))
 		{
 			return $this->createObject(-1, 'unknown content');
 		}
@@ -797,7 +800,7 @@ class stickerController extends sticker
 		else
 		{
 
-			if ($obj->price > $this->module_config->maxPoint || $obj->price < $this->module_config->minPoint)
+			if (!isset($obj->price) || $obj->price > $this->module_config->maxPoint || $obj->price < $this->module_config->minPoint)
 			{
 				return $this->createObject(-1, 'point error');
 			}
@@ -806,7 +809,7 @@ class stickerController extends sticker
 
 		//파일 체크
 		//파일이 존재하지 않을 시
-		if (!$obj->sticker_main_file || !$obj->sticker_file)
+		if (empty($obj->sticker_main_file) || empty($obj->sticker_file))
 		{
 			return $this->createObject(-1, 'file is not exist');
 		}
@@ -953,7 +956,7 @@ class stickerController extends sticker
 		$args->nick_name = $logged_info->nick_name;
 		$args->category_srl = 0;
 		$args->title = cut_str(trim(htmlspecialchars(strip_tags($obj->title), ENT_QUOTES, 'UTF-8', false)), 100);
-		$args->tag = cut_str(htmlspecialchars(strip_tags($obj->tags), ENT_QUOTES, 'UTF-8', false), 150);
+		$args->tag = cut_str(htmlspecialchars(strip_tags((string)($obj->tags ?? '')), ENT_QUOTES, 'UTF-8', false), 150);
 		$args->content = removeHackTag($obj->content);
 		$args->uploaded_count = $file_count;
 		$args->end_date = $end_date;
@@ -994,15 +997,16 @@ class stickerController extends sticker
 
 	function _updateSticker($obj, $sticker)
 	{
+		$logged_info = Context::get('logged_info');
 
 		// 제목 유무 체크
-		if (!$obj->title)
+		if (empty($obj->title))
 		{
 			return $this->createObject(-1, 'unknown title');
 		}
 
 		//빈 내용인지 체크
-		if (!$obj->content)
+		if (empty($obj->content))
 		{
 			return $this->createObject(-1, 'unknown content');
 		}
@@ -1014,7 +1018,7 @@ class stickerController extends sticker
 		}
 		else
 		{
-			if ($obj->price > $this->module_config->maxPoint || $obj->price < $this->module_config->minPoint)
+			if (!isset($obj->price) || $obj->price > $this->module_config->maxPoint || $obj->price < $this->module_config->minPoint)
 			{
 				return $this->createObject(-1, 'point error');
 			}
@@ -1047,7 +1051,7 @@ class stickerController extends sticker
 
 		$oFileController = getController('file');
 
-		if ($obj->sticker_main_file)
+		if (!empty($obj->sticker_main_file))
 		{
 
 			$main_image_info = null;
@@ -1132,7 +1136,7 @@ class stickerController extends sticker
 
 		for ($i = 1; $i <= $this->module_config->maxUploads; $i++)
 		{
-			$stk = $obj->{"sticker_file_" . $i};
+			$stk = $obj->{"sticker_file_" . $i} ?? null;
 			if ($stk)
 			{
 
@@ -1308,7 +1312,7 @@ class stickerController extends sticker
 
 		$file_count = $this->_getStickerFileCount($sticker_srl);
 
-		$tag = $this->_checkCorrectTag(cut_str(htmlspecialchars(strip_tags($obj->tags), ENT_QUOTES, 'UTF-8', false), 150));
+		$tag = $this->_checkCorrectTag(cut_str(htmlspecialchars(strip_tags((string)($obj->tags ?? '')), ENT_QUOTES, 'UTF-8', false), 150));
 
 		//insert sticker document
 		$args = new stdClass();
@@ -1671,7 +1675,7 @@ class stickerController extends sticker
 		$sticker_srl = $oSticker->sticker_srl;
 		$member_srl = $oSticker->member_srl;
 		$logged_info = Context::get('logged_info');
-		if ($_SESSION['readed_sticker'][$sticker_srl])
+		if (!empty($_SESSION['readed_sticker'][$sticker_srl]))
 		{
 			return false;
 		}
@@ -1725,13 +1729,13 @@ class stickerController extends sticker
 	{
 		$logged_info = Context::get('logged_info');
 		$idx = $sequence ? $sequence : getNextSequence();
-		$sticker_srl = $obj->sticker_srl ? $obj->sticker_srl : 0;
-		$sticker_file_srl = $obj->sticker_file_srl ? $obj->sticker_file_srl : null;
-		if($obj->member_srl)
+		$sticker_srl = empty($obj->sticker_srl) ? 0 : $obj->sticker_srl;
+		$sticker_file_srl = empty($obj->sticker_file_srl) ? null : $obj->sticker_file_srl;
+		if(!empty($obj->member_srl))
 		{
 			$member_srl = $obj->member_srl;
 		}
-		else if(Context::get('logged_info'))
+		else if($logged_info)
 		{
 			$member_srl = $logged_info->member_srl;
 		}
@@ -1739,20 +1743,20 @@ class stickerController extends sticker
 		{
 			$member_srl = 0;
 		}
-		
-		$type = $obj->type ? $obj->type : null;
-		$comment_srl = $obj->comment_srl ? $obj->comment_srl : null;
-		$document_srl = $obj->document_srl ? $obj->document_srl : null;
-		$content = $obj->content ? $obj->content : null;
-		if($obj->point)
+
+		$type = empty($obj->type) ? null : $obj->type;
+		$comment_srl = empty($obj->comment_srl) ? null : $obj->comment_srl;
+		$document_srl = empty($obj->document_srl) ? null : $obj->document_srl;
+		$content = empty($obj->content) ? null : $obj->content;
+		if(!empty($obj->point))
 		{
 			$point = $obj->point;
 		}
-		else if($obj->use_point)
+		else if(!empty($obj->use_point))
 		{
 			$point = $obj->use_point;
 		}
-		else if($obj->price)
+		else if(!empty($obj->price))
 		{
 			$point = $obj->price;
 		}
@@ -1760,8 +1764,8 @@ class stickerController extends sticker
 		{
 			$point = null;
 		}
-		$ipaddress = $obj->ipaddress ? $obj->ipaddress : $_SERVER['REMOTE_ADDR'];
-		$regdate = $obj->regdate ? $obj->regdate : date("YmdHis");
+		$ipaddress = empty($obj->ipaddress) ? $_SERVER['REMOTE_ADDR'] : $obj->ipaddress;
+		$regdate = empty($obj->regdate) ? date("YmdHis") : $obj->regdate;
 
 		if (!$type)
 		{

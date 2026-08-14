@@ -280,7 +280,21 @@
 		<value xml:lang="ko"><![CDATA[브라우저 제목]]></value>
 	</item>
 	<item name="cmd_browser_title">
-		<value xml:lang="ko"><![CDATA[/sticker 주소에 대해 브라우저 제목을 설정합니다.]]></value>
+		<value xml:lang="ko"><![CDATA[/sticker 주소에 대해 브라우저 제목을 설정합니다. 스티커 목록 화면의 제목으로도 사용됩니다.]]></value>
+	</item>
+
+	<item name="stkr_browser_subtitle">
+		<value xml:lang="ko"><![CDATA[브라우저 부제목]]></value>
+	</item>
+	<item name="cmd_browser_subtitle">
+		<value xml:lang="ko"><![CDATA[스티커 목록 화면에서 제목 아래에 표시할 한 줄 설명입니다.]]></value>
+	</item>
+
+	<item name="stkr_quick_tags">
+		<value xml:lang="ko"><![CDATA[빠른 등록 태그]]></value>
+	</item>
+	<item name="cmd_quick_tags">
+		<value xml:lang="ko"><![CDATA[스티커 등록 화면에서 한 번에 붙일 수 있는 태그 목록입니다.<BR>여러 개일 경우 "," 로 구분합니다. 비워두면 빠른 등록 영역이 표시되지 않습니다.]]></value>
 	</item>
 
 	<item name="stkr_gifResizingIf">

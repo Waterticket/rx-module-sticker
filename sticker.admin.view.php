@@ -12,6 +12,13 @@ class stickerAdminView extends sticker
 		$oModuleModel = getModel('module');
 		$this->module_info = $oModuleModel->getModuleInfoByMid("sticker");
 
+		// 템플릿이 항상 참조하는 검색/페이지 변수를 미리 정의해 둔다. (PHP 8 Undefined property 방지)
+		Context::set('search_target', strval(Context::get('search_target')));
+		Context::set('search_keyword', strval(Context::get('search_keyword')));
+		Context::set('page', Context::get('page') ? Context::get('page') : 1);
+		Context::set('sort_index', strval(Context::get('sort_index')));
+		Context::set('order_type', strval(Context::get('order_type')));
+
 		$this->setTemplatePath($this->module_path.'tpl');
 	}
 
@@ -38,11 +45,7 @@ class stickerAdminView extends sticker
 		$args->page = Context::get('page') ? Context::get('page') : 1;
 		$output = executeQueryArray('sticker.getStickerAdminList', $args);
 		foreach($output->data as &$value){
-			$args1 = new stdClass();
-			$args1->sticker_srl = $value->sticker_srl;
-			$args1->no = 0;
-			$output1 = executeQuery('sticker.getStickerMainImage', $args1);
-			$value->main_image = $output1->data->url;
+			$value->main_image = $this->_getStickerMainImage($value->sticker_srl);
 		}
 
 		Context::set('list', $output->data);
@@ -116,17 +119,13 @@ class stickerAdminView extends sticker
 		$oMemberModel = getModel('member');
 		$oStickerModel = getModel('sticker');
 		foreach($output->data as &$value){
-			$args1 = new stdClass();
-			$args1->sticker_srl = $value->sticker_srl;
-			$args1->no = 0;
-			$output1 = executeQuery('sticker.getStickerMainImage', $args1);
-			$value->main_image = $output1->data->url;
+			$value->main_image = $this->_getStickerMainImage($value->sticker_srl);
 
 			$oMember = $oMemberModel->getMemberInfoByMemberSrl($value->member_srl);
-			$value->nick_name = $oMember->nick_name;
+			$value->nick_name = $oMember ? $oMember->nick_name : '';
 
 			$oSticker = $oStickerModel->getSticker($value->sticker_srl);
-			$value->title = $oSticker->title;
+			$value->title = $oSticker ? $oSticker->title : '';
 		}
 		Context::set('date', date("YmdHis"));
 		Context::set('list', $output->data);
@@ -151,15 +150,11 @@ class stickerAdminView extends sticker
 			return $this->createObject(-1,'msg_invalid_sticker');
 		}
 
-		$args1 = new stdClass();
-		$args1->sticker_srl = $output->data->sticker_srl;
-		$args1->no = 0;
-		$output1 = executeQuery('sticker.getStickerMainImage', $args1);
-		$oSticker->main_image = $output1->data->url;
+		$oSticker->main_image = $this->_getStickerMainImage($output->data->sticker_srl);
 
 		$oMemberModel = getModel('member');
 		$oMember = $oMemberModel->getMemberInfoByMemberSrl($output->data->member_srl);
-		$output->data->nick_name = $oMember->nick_name;
+		$output->data->nick_name = $oMember ? $oMember->nick_name : '';
 
 		Context::set('date', date('YmdHis'));
 		Context::set('oBuyInfo', $output->data);
@@ -186,17 +181,13 @@ class stickerAdminView extends sticker
 		$oMemberModel = getModel('member');
 		$oStickerModel = getModel('sticker');
 		foreach($output->data as &$value){
-			$args1 = new stdClass();
-			$args1->sticker_srl = $value->sticker_srl;
-			$args1->no = 0;
-			$output1 = executeQuery('sticker.getStickerMainImage', $args1);
-			$value->main_image = $output1->data->url;
+			$value->main_image = $this->_getStickerMainImage($value->sticker_srl);
 
 			$oMember = $oMemberModel->getMemberInfoByMemberSrl($value->member_srl);
-			$value->nick_name = $oMember->nick_name;
+			$value->nick_name = $oMember ? $oMember->nick_name : '';
 
 			$oSticker = $oStickerModel->getSticker($value->sticker_srl);
-			$value->title = $oSticker->title;
+			$value->title = $oSticker ? $oSticker->title : '';
 		}
 		Context::set('list', $output->data);
 		Context::set('page_navigation', $output->page_navigation);
@@ -218,7 +209,7 @@ class stickerAdminView extends sticker
 
 		$oMemberModel = getModel('member');
 		$oMember = $oMemberModel->getMemberInfoByMemberSrl($output->data->member_srl);
-		$output->data->nick_name = $oMember->nick_name;
+		$output->data->nick_name = $oMember ? $oMember->nick_name : '';
 
 		Context::set('oLog', $output->data);
 		Context::set('oSticker', $oSticker);
@@ -238,6 +229,13 @@ class stickerAdminView extends sticker
 		} else {
 			$oModuleModel = getModel('module');
 			$module_info = $oModuleModel->getModuleInfoByMid('sticker');
+		}
+
+		if(!isset($this->module_config->browser_subtitle)){
+			$this->module_config->browser_subtitle = sticker::DEFAULT_BROWSER_SUBTITLE;
+		}
+		if(!isset($this->module_config->quick_tags)){
+			$this->module_config->quick_tags = '';
 		}
 
 		Context::set('module_info', $module_info);
@@ -308,6 +306,22 @@ class stickerAdminView extends sticker
 		Context::set('skin_content', $skin_content);
 
 		$this->setTemplateFile('skin_info');
+	}
+
+	/**
+	 * 스티커의 대표 이미지(no = 0) URL을 반환한다. 없으면 빈 문자열.
+	 *
+	 * @param int $sticker_srl
+	 * @return string
+	 */
+	private function _getStickerMainImage($sticker_srl)
+	{
+		$args = new stdClass();
+		$args->sticker_srl = $sticker_srl;
+		$args->no = 0;
+		$output = executeQueryArray('sticker.getStickerMainImage', $args);
+
+		return isset($output->data[0]->url) ? $output->data[0]->url : '';
 	}
 
 }

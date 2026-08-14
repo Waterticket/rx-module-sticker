@@ -50,6 +50,24 @@
 		</div>
 
 		<div class="x_control-group">
+			<label for="browser_subtitle" class="x_control-label">{$lang->stkr_browser_subtitle}</label>
+			<div class="x_controls">
+				<input type="text" name="browser_subtitle" id="browser_subtitle" style="width:400px" value="{$config->browser_subtitle}">
+				<a href="#browser_subtitle_help" class="x_icon-question-sign" data-toggle="#browser_subtitle_help">{$lang->help}</a>
+				<p id="browser_subtitle_help" class="x_help-block" hidden="hidden">{$lang->cmd_browser_subtitle}</p>
+			</div>
+		</div>
+
+		<div class="x_control-group">
+			<label for="quick_tags" class="x_control-label">{$lang->stkr_quick_tags}</label>
+			<div class="x_controls">
+				<input type="text" name="quick_tags" id="quick_tags" style="width:400px" value="{$config->quick_tags}" placeholder="예: 2D, 캐릭터, 텍스트">
+				<a href="#quick_tags_help" class="x_icon-question-sign" data-toggle="#quick_tags_help">{$lang->help}</a>
+				<p id="quick_tags_help" class="x_help-block" hidden="hidden">{$lang->cmd_quick_tags}</p>
+			</div>
+		</div>
+
+		<div class="x_control-group">
 			<label for="default_sticker" class="x_control-label">{$lang->stkr_default_sticker}</label>
 			<div class="x_controls">
 				<input type="text" name="default_sticker" id="default_sticker" value="{$config->default_sticker}">

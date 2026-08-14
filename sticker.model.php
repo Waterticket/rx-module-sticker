@@ -56,7 +56,7 @@ class stickerModel extends sticker
 			$args->date = $date;
 			$output2 = executeQueryArray('sticker.getStickerMylist', $args);
 
-			$count = page > 1 || $defaultStickerCount == 5 ? $defaultStickerCount : 0;
+			$count = $page > 1 || $defaultStickerCount == 5 ? $defaultStickerCount : 0;
 
 			if($page > 1){
 				unset($sticker_array);
@@ -83,12 +83,12 @@ class stickerModel extends sticker
 						$args = new stdClass();
 						$args->sticker_srl = $current->sticker_srl;
 						$args->no = 0;
-						$output1 = executeQuery('sticker.getStickerMainImage', $args);
+						$output1 = executeQueryArray('sticker.getStickerMainImage', $args);
 
 						$obj = new stdClass();
 						$obj->sticker_srl = $current->sticker_srl;
 						$obj->title = $current->title;
-						$obj->main_image = $output1->data->url;
+						$obj->main_image = isset($output1->data[0]->url) ? $output1->data[0]->url : '';
 
 						if($i !== 1){
 							next($prev_data);
@@ -112,7 +112,7 @@ class stickerModel extends sticker
 				$obj = new stdClass();
 				$obj->sticker_srl = $sticker->sticker_srl;
 				$obj->title = $sticker->title;
-				$obj->main_image = $output1->data[0]->url;
+				$obj->main_image = isset($output1->data[0]->url) ? $output1->data[0]->url : '';
 				array_push($sticker_array, $obj);
 				$count++;
 			}
@@ -150,8 +150,8 @@ class stickerModel extends sticker
 
 		$args = new stdClass();
 		$args->sticker_srl = $sticker_srl;
-		$output = executeQuery('sticker.getStickerImage', $args);
-		if(!count($output->data)){
+		$output = executeQueryArray('sticker.getStickerImage', $args);
+		if(empty($output->data)){
 			return $this->createObject(-1,'invalid_sticker');
 		}
 		foreach($output->data as $value){
@@ -197,6 +197,10 @@ class stickerModel extends sticker
 	}
 
 	function getSticker($sticker_srl){
+		if(!$sticker_srl){
+			return false;
+		}
+
 		$args = new stdClass();
 		$args->sticker_srl = $sticker_srl;
 		$output = executeQuery('sticker.getSticker', $args);
@@ -204,7 +208,8 @@ class stickerModel extends sticker
 	}
 
 	function getDefaultSticker(){
-		$defaultSticker = $this->module_config->default_sticker;
+		$config = $this->getConfig();
+		$defaultSticker = isset($config->default_sticker) ? $config->default_sticker : '';
 		$sticker = explode(',', $defaultSticker);
 		$stickerArray = array();
 		foreach($sticker as $key=>$value){
@@ -215,12 +220,12 @@ class stickerModel extends sticker
 				$args = new stdClass();
 				$args->sticker_srl = $value;
 				$args->no = 0;
-				$output = executeQuery('sticker.getStickerMainImage', $args);
+				$output = executeQueryArray('sticker.getStickerMainImage', $args);
 
 				$obj = new stdClass();
 				$obj->sticker_srl = $oSticker->sticker_srl;
 				$obj->title = $oSticker->title;
-				$obj->main_image = $output->data->url;
+				$obj->main_image = isset($output->data[0]->url) ? $output->data[0]->url : '';
 
 				array_push($stickerArray, $obj);
 			}
@@ -230,7 +235,8 @@ class stickerModel extends sticker
 	}
 
 	function checkDefaultSticker($sticker_srl){
-		$defaultSticker = $this->module_config->default_sticker;
+		$config = $this->getConfig();
+		$defaultSticker = isset($config->default_sticker) ? $config->default_sticker : '';
 		$sticker = explode(',', $defaultSticker);
 		foreach($sticker as $value){
 			$value = trim($value);

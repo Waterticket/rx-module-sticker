@@ -41,42 +41,49 @@ class stickerView extends sticker
 			}
 		}
 
+		$search_target = strval(Context::get('search_target'));
+		$search_keyword = strval(Context::get('search_keyword'));
+		$sort = Context::get('sort') === 'popular' ? 'popular' : 'recent';
+
 		if($this->grant->list){
 
-			$search_target = Context::get('search_target');
-			$search_keyword = Context::get('search_keyword');
 			$columnList = array('title', 'content', 'nick_name', 'tag', 'status');
 
 			$args = new stdClass();
 			$args->page = Context::get('page');
-			$args->list_count = 16; ///< 한페이지에 보여줄 기록 수
+			$args->list_count = 20; ///< 한페이지에 보여줄 기록 수
 			$args->page_count = 10; ///< 페이지 네비게이션에 나타날 페이지의 수
+			$args->sort_index = $sort === 'popular' ? 'sticker.bought_count' : 'sticker.regdate';
 			$args->order_type = 'desc';
 			if($search_target && in_array($search_target, $columnList)) {
 				if($search_target == 'status'){
 					$args->status = $search_keyword != 'CHECK' ? 'PUBLIC' : 'CHECK';
 				} else {
-					$args->{"s_".Context::get('search_target')} = Context::get('search_keyword') ? Context::get('search_keyword') : null;
+					$args->{"s_".$search_target} = $search_keyword ? $search_keyword : null;
 				}
 			}
 
 			$output = executeQueryArray('sticker.getStickerList', $args);
 
-			foreach($output->data as &$sticker){
-				$args1 = new stdClass();
-				$args1->sticker_srl = $sticker->sticker_srl;
-				$args1->no = 0;
-				$output1 = executeQueryArray('sticker.getStickerMainImage', $args1);
-				$sticker->main_image = $output1->data[0]->url;
+			foreach($output->data as $sticker){
+				$sticker->main_image = $this->_getStickerMainImage($sticker->sticker_srl);
 			}
 
-			Context::addJsFilter($this->module_path.'tpl/filter', 'search.xml');
 			Context::set('list', $output->data);
 			Context::set('page_navigation', $output->page_navigation);
 
 		}
 
+		$oStickerModel = getModel('sticker');
+		$config = $oStickerModel->getConfig();
+		$subtitle = isset($config->browser_subtitle) ? trim($config->browser_subtitle) : '';
+
 		Context::set('grant', $this->grant);
+		Context::set('sort', $sort);
+		Context::set('search_target', $search_target);
+		Context::set('search_keyword', $search_keyword);
+		Context::set('sticker_title', $this->module_info->browser_title ? $this->module_info->browser_title : '스티커');
+		Context::set('sticker_subtitle', $subtitle !== '' ? $subtitle : sticker::DEFAULT_BROWSER_SUBTITLE);
 		$this->setTemplateFile('board');
 	}
 
@@ -102,7 +109,6 @@ class stickerView extends sticker
 			$is_bougth = $oStickerModel->checkBuySticker($logged_info->member_srl, $sticker_srl);
 		}
 
-		$title = $output->data->title || "Untitled";
 		Context::addBrowserTitle($output->data->title);
 
 		$oStickerController = getController('sticker');
@@ -132,6 +138,7 @@ class stickerView extends sticker
 
 		$sticker_srl = Context::get('sticker_srl');
 		$sticker = false;
+		$sticker_file = array();
 
 		if($sticker_srl){
 			$args = new stdClass();
@@ -171,12 +178,13 @@ class stickerView extends sticker
 			}
 
 			$output1 = executeQueryArray('sticker.getStickerImage', $args);
+			$sticker_file = $output1->data;
 
 			$output->data->content = htmlspecialchars($output->data->content, ENT_COMPAT | ENT_HTML401, 'UTF-8', false);
 			$sticker = $output->data;
 		}
 		Context::set('sticker', $sticker);
-		Context::set('sticker_file', $output1->data);
+		Context::set('sticker_file', $sticker_file);
 
 		$oEditorModel = getModel('editor');
 		$option = new stdClass();
@@ -204,7 +212,10 @@ class stickerView extends sticker
 
 	function dispStickerDelete(){
 		$logged_info = Context::get('logged_info');
-		$member_srl = $logged_info ? $logged_info->member_srl : 0;
+		if(!$logged_info){
+			return $this->createObject(-1,'invalid_access');
+		}
+		$member_srl = $logged_info->member_srl;
 		$sticker_srl = Context::get('sticker_srl');
 		if(!($sticker_srl)){
 			return $this->createObject(-1,'invalid_access');
@@ -260,19 +271,15 @@ class stickerView extends sticker
 		}
 		$args = new stdClass();
 		$args->page = Context::get('page');
-		$args->list_count = 22;
+		$args->list_count = 20;
 		$args->page_count = 10;
 		$args->order_type = 'asc';
 		$args->member_srl = $logged_info->member_srl;
 		$args->date = date("YmdHis");
 		$output = executeQueryArray('sticker.getStickerMylist', $args);
 
-		foreach($output->data as &$sticker){
-			$args1 = new stdClass();
-			$args1->sticker_srl = $sticker->sticker_srl;
-			$args1->no = 0;
-			$output1 = executeQueryArray('sticker.getStickerMainImage', $args1);
-			$sticker->main_image = $output1->data[0]->url;
+		foreach($output->data as $sticker){
+			$sticker->main_image = $this->_getStickerMainImage($sticker->sticker_srl);
 		}
 
 		Context::set('sticker', $output->data);
@@ -282,6 +289,21 @@ class stickerView extends sticker
 
 	}
 
+	/**
+	 * 스티커의 대표 이미지(no = 0) URL을 반환한다. 없으면 빈 문자열.
+	 *
+	 * @param int $sticker_srl
+	 * @return string
+	 */
+	private function _getStickerMainImage($sticker_srl)
+	{
+		$args = new stdClass();
+		$args->sticker_srl = $sticker_srl;
+		$args->no = 0;
+		$output = executeQueryArray('sticker.getStickerMainImage', $args);
+
+		return isset($output->data[0]->url) ? $output->data[0]->url : '';
+	}
 
 }
 

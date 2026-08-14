@@ -8,7 +8,10 @@
 
 class sticker extends ModuleObject
 {
-
+	/**
+	 * 목록 화면 부제목의 기본값.
+	 */
+	const DEFAULT_BROWSER_SUBTITLE = '사이트에서 사용할 스티커를 구매해보세요.';
 
 	private $triggers = array(
 		array( 'member.deleteMember',			'sticker',	'controller',	'triggerDeleteMember',					'after'	),
@@ -45,6 +48,8 @@ class sticker extends ModuleObject
 		$config->use = "Y";
 		$config->before_test = "N";
 		$config->add_member_menu = "N";
+		$config->browser_subtitle = self::DEFAULT_BROWSER_SUBTITLE;
+		$config->quick_tags = "";
 		$config->default_sticker = "";
 		$config->deleted_sticker = '<i><p style="color: rgb(125, 125, 125);">존재하지 않는 스티커입니다.</p></i>';
 		$config->buy_limit = 20;
@@ -130,6 +135,12 @@ class sticker extends ModuleObject
 			}
 		}
 
+		$config = $oModuleModel->getModuleConfig('sticker');
+		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags)))
+		{
+			return true;
+		}
+
 		return false;
 	}
 
@@ -144,6 +155,20 @@ class sticker extends ModuleObject
 			{
 				$oModuleController->insertTrigger($trigger[0], $trigger[1], $trigger[2], $trigger[3], $trigger[4]);
 			}
+		}
+
+		$config = $oModuleModel->getModuleConfig('sticker');
+		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags)))
+		{
+			if (!isset($config->browser_subtitle))
+			{
+				$config->browser_subtitle = self::DEFAULT_BROWSER_SUBTITLE;
+			}
+			if (!isset($config->quick_tags))
+			{
+				$config->quick_tags = '';
+			}
+			$oModuleController->insertModuleConfig('sticker', $config);
 		}
 
 		return $this->createObject();

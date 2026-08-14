@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <skin version="0.2">
-	<title xml:lang="ko">스케치북 기반 기본 스킨</title>
-	<description xml:lang="ko">스케치북 게시판 기반 스티커 모듈 기본 스킨.</description>
-	<version>0.0.0</version>
-	<date>2016-12-31</date>
-	<author email_address="mmia268@gmail.com" link="http://gamezot.net">
-		<name xml:lang="ko">후하니</name>
+	<title xml:lang="ko">기본 스킨</title>
+	<description xml:lang="ko">스티커 모듈 기본 스킨. Blade(v2) 템플릿으로 작성되었으며 레이아웃의 라이트/다크 색상 변수를 따라갑니다.</description>
+	<version>1.0.0</version>
+	<date>2026-08-14</date>
+	<author email_address="waterticket@potatosoft.kr" link="https://potatosoft.kr">
+		<name xml:lang="ko">Waterticket</name>
 	</author>
 	<license>GPLv2</license>
 </skin>
