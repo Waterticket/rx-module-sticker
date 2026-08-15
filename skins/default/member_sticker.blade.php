@@ -29,7 +29,7 @@
 				<td class="stk-mylist__name-cell">
 					<a class="stk-mylist__name" href="{{ getUrl('', 'mid', $mid, 'act', '', 'page', '', 'sticker_srl', $item->sticker_srl) }}">
 						@if($item->main_image)
-							<img class="stk-mylist__thumb" src="{{ $item->main_image }}" alt="" loading="lazy" />
+							@include('_media', ['url' => $item->main_image, 'class' => 'stk-mylist__thumb', 'lazy' => true])
 						@endif
 						<span>{{ $item->title }}</span>
 					</a>

@@ -29,7 +29,8 @@
 </tr>
 <tr>
 	<th scope="col" class="nowr">스티커 제목</th>
-	<td><img src="{$oSticker->main_image}" style="width:50px; height:50px; object-fit:cover; margin:0 5px 0 0;">
+	<td><img src="{$oSticker->main_image}" cond="!str_ends_with($oSticker->main_image, '.mp4')" style="width:50px; height:50px; object-fit:cover; margin:0 5px 0 0;">
+		<video src="{$oSticker->main_image}" cond="str_ends_with($oSticker->main_image, '.mp4')" poster="{substr($oSticker->main_image, 0, -4)}.webp" loading="lazy" autoplay="autoplay" muted="muted" loop="" playsinline="playsinline" style="width:50px; height:50px; object-fit:cover; margin:0 5px 0 0;"></video>
 		<a href="{getUrl('','mid', 'sticker', 'sticker_srl', $oSticker->sticker_srl)}" target="_blank"><span>{$oSticker->title}</span></a></td>
 </tr>
 <tr>

@@ -71,7 +71,7 @@
 			$file_label = ($dot = strrpos($file->file_name, '.')) === false ? $file->file_name : substr($file->file_name, 0, $dot);
 		@endphp
 		<li class="stk-samples__item">
-			<img src="{{ $file->url }}" alt="{{ $file_label }}" title="{{ $file_label }}" loading="lazy" />
+			@include('_media', ['url' => $file->url, 'alt' => $file_label, 'title' => $file_label, 'lazy' => true])
 		</li>
 		@endforeach
 	</ul>

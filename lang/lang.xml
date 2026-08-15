@@ -304,6 +304,29 @@
 		<value xml:lang="ko"><![CDATA[GIF파일 리사이징 후 파일 용량이 오히려 커진 경우 원본 파일을 사용합니다.<BR>이미지 해상도의 짧은축/긴축 값이 0.4 이하일 경우 설정에 관계없이 변환된 파일을 이용합니다.]]></value>
 	</item>
 
+	<item name="stkr_gif2mp4">
+		<value xml:lang="ko"><![CDATA[GIF → MP4 변환]]></value>
+	</item>
+	<item name="cmd_gif2mp4">
+		<value xml:lang="ko"><![CDATA[움직이는 GIF 스티커를 MP4 동영상으로 변환하여 용량 및 트래픽을 절약합니다.<BR>file 모듈에 설정된 ffmpeg를 그대로 사용하며, 실패하면 기존처럼 GIF로 저장됩니다.<BR>단, 게시판 스킨이 mp4 스티커 형식을 지원해야합니다.]]></value>
+	</item>
+	<item name="msg_stkr_cannot_use_ffmpeg">
+		<value xml:lang="ko"><![CDATA[이 기능을 사용하려면 관리자 > 서비스운영 > 파일 업로드 설정에서 ffmpeg 명령을 실행할 수 있도록 설정해야 합니다.]]></value>
+	</item>
+
+	<item name="stkr_migrate_gif2mp4">
+		<value xml:lang="ko"><![CDATA[기존 GIF 스티커 일괄 변환]]></value>
+	</item>
+	<item name="cmd_migrate_gif2mp4">
+		<value xml:lang="ko"><![CDATA[이미 올라와 있는 GIF 스티커는 자동으로 바뀌지 않습니다.<BR>지금 등록된 GIF 스티커를 모두 MP4로 변환하려면 아래 버튼을 눌러주세요. 변환은 백그라운드 큐에서 순차적으로 처리되며, 완료 전까지는 기존 GIF가 그대로 보입니다.]]></value>
+	</item>
+	<item name="msg_stkr_queue_required">
+		<value xml:lang="ko"><![CDATA[일괄 변환은 큐(비동기 작업)가 켜져 있어야 사용할 수 있습니다. 관리자 > 서비스운영 > 큐 설정을 확인해주세요.]]></value>
+	</item>
+	<item name="msg_stkr_gif2mp4_disabled">
+		<value xml:lang="ko"><![CDATA[GIF → MP4 변환 옵션을 먼저 켜고 저장한 뒤 다시 시도해주세요.]]></value>
+	</item>
+
 	<item name="cmd_sticker_mypage">
 		<value xml:lang="ko"><![CDATA[보유 스티커]]></value>
 	</item>

@@ -55,6 +55,7 @@
         <action name="dispStickerAdminMobileSkinInfo" type="view" />
 
         <action name="procStickerAdminConfig" type="controller" />
+        <action name="procStickerAdminMigrateGifToMp4" type="controller" />
         <action name="procStickerAdminDesign" type="controller" />
         <action name="procStickerAdminUpdate" type="controller" />
         <action name="procStickerAdminDelete" type="controller" />

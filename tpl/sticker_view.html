@@ -224,7 +224,8 @@
 		</th>
 		<td>
 			<div class="sticker_file_info" cond="$oStickerFile->file_info" style="float:left;">
-				<img src="{$oStickerFile->url}">
+				<img src="{$oStickerFile->url}" cond="!str_ends_with($oStickerFile->url, '.mp4')">
+				<video src="{$oStickerFile->url}" cond="str_ends_with($oStickerFile->url, '.mp4')" poster="{substr($oStickerFile->url, 0, -4)}.webp" loading="lazy" controls="controls" muted="muted" style="max-width:200px;"></video>
 			</div>
 			<div class="sticker_file_info">
 				<table>

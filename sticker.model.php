@@ -17,7 +17,7 @@ class stickerModel extends sticker
 		static $config = null;
 		if(is_null($config))
 		{
-			$oModuleModel = getModel('module');
+			$oModuleModel = ModuleModel::getInstance();
 			$config = $oModuleModel->getModuleConfig('sticker');
 			if(!$config)
 			{
@@ -35,16 +35,14 @@ class stickerModel extends sticker
 	}
 
 	function getCommentStickerList(){
-
 		$logged_info =  Context::get('logged_info');
 		$sticker_array = $this->getDefaultSticker();
 
-//debugPrint($stocker_array);
 		$defaultStickerCount = count($sticker_array);
 		$page = Context::get('page') ? Context::get('page') : 1;
 		$date = date('YmdHis');
 
-		$list_count = Mobile::isMobileCheckByAgent() ? 5 : 12;
+		$list_count = Rhymix\Framework\UA::isMobile() ? 5 : 12;
 
 		if($logged_info){
 			$args = new stdClass();

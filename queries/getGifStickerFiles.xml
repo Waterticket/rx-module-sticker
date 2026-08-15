@@ -1,0 +1,17 @@
+<query id="getGifStickerFiles" action="select">
+	<tables>
+		<table name="sticker_files" />
+	</tables>
+	<columns>
+		<column name="sticker_srl" />
+		<column name="sticker_file_srl" />
+		<column name="member_srl" />
+		<column name="file_srl" />
+		<column name="file_name" />
+		<column name="url" />
+		<column name="regdate" />
+	</columns>
+	<conditions>
+		<condition operation="like_suffix" column="url" var="ext" />
+	</conditions>
+</query>

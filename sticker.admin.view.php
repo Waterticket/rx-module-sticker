@@ -9,7 +9,7 @@ class stickerAdminView extends sticker
 {
 	public function init(){
 
-		$oModuleModel = getModel('module');
+		$oModuleModel = ModuleModel::getInstance();
 		$this->module_info = $oModuleModel->getModuleInfoByMid("sticker");
 
 		// 템플릿이 항상 참조하는 검색/페이지 변수를 미리 정의해 둔다. (PHP 8 Undefined property 방지)
@@ -70,13 +70,13 @@ class stickerAdminView extends sticker
 
 		$output->data->sticker_editor = htmlspecialchars($output->data->content, ENT_COMPAT | ENT_HTML401, 'UTF-8', false);
 
-		$oFileModel = getModel('file');
+		$oFileModel = FileModel::getInstance();
 		foreach($output1->data as &$value){
 			$oFileInfo = $oFileModel->getFile($value->file_srl);
 			$value->file_info = $oFileInfo;
 		}
 
-		$oEditorModel = getModel('editor');
+		$oEditorModel = EditorModel::getInstance();
 		$option = new stdClass();
 		$option->primary_key_name = 'sticker_srl';
 		$option->content_key_name = 'content';
@@ -116,9 +116,9 @@ class stickerAdminView extends sticker
 		$args->page = Context::get('page') ? Context::get('page') : 1;
 		$output = executeQueryArray('sticker.getStickerBuyList'.($search_target == 'status' && $search_keyword == 'ACTIVE' ? "ByActive" : ""), $args);
 
-		$oMemberModel = getModel('member');
-		$oStickerModel = getModel('sticker');
-		foreach($output->data as &$value){
+		$oMemberModel = MemberModel::getInstance();
+		$oStickerModel = StickerModel::getInstance();
+		foreach($output->data as $value){
 			$value->main_image = $this->_getStickerMainImage($value->sticker_srl);
 
 			$oMember = $oMemberModel->getMemberInfoByMemberSrl($value->member_srl);
@@ -144,7 +144,7 @@ class stickerAdminView extends sticker
 			return $this->createObject(-1,'msg_invalid_data');
 		}
 
-		$oStickerModel = getModel('sticker');
+		$oStickerModel = StickerModel::getInstance();
 		$oSticker = $oStickerModel->getSticker($output->data->sticker_srl);
 		if(!$oSticker){
 			return $this->createObject(-1,'msg_invalid_sticker');
@@ -152,7 +152,7 @@ class stickerAdminView extends sticker
 
 		$oSticker->main_image = $this->_getStickerMainImage($output->data->sticker_srl);
 
-		$oMemberModel = getModel('member');
+		$oMemberModel = MemberModel::getInstance();
 		$oMember = $oMemberModel->getMemberInfoByMemberSrl($output->data->member_srl);
 		$output->data->nick_name = $oMember ? $oMember->nick_name : '';
 
@@ -178,8 +178,8 @@ class stickerAdminView extends sticker
 		$args->page = Context::get('page') ? Context::get('page') : 1;
 		$output = executeQueryArray('sticker.getStickerLogs', $args);
 
-		$oMemberModel = getModel('member');
-		$oStickerModel = getModel('sticker');
+		$oMemberModel = MemberModel::getInstance();
+		$oStickerModel = StickerModel::getInstance();
 		foreach($output->data as &$value){
 			$value->main_image = $this->_getStickerMainImage($value->sticker_srl);
 
@@ -204,10 +204,10 @@ class stickerAdminView extends sticker
 		if(empty($output->data)){
 			return $this->createObject(-1,'msg_invalid_data');
 		}
-		$oStickerModel = getModel('sticker');
+		$oStickerModel = StickerModel::getInstance();
 		$oSticker = $oStickerModel->getSticker($output->data->sticker_srl);
 
-		$oMemberModel = getModel('member');
+		$oMemberModel = MemberModel::getInstance();
 		$oMember = $oMemberModel->getMemberInfoByMemberSrl($output->data->member_srl);
 		$output->data->nick_name = $oMember ? $oMember->nick_name : '';
 
@@ -219,7 +219,7 @@ class stickerAdminView extends sticker
 
 	function dispStickerAdminConfig(){
 		if(!$this->module_config){
-			$oStickerModel = getModel('sticker');
+			$oStickerModel = StickerModel::getInstance();
 			$config = $oStickerModel->getConfig();
 			$this->module_config = $config;
 		}
@@ -227,7 +227,7 @@ class stickerAdminView extends sticker
 		if($this->module_info && $this->module_info->module == "sticker"){
 			$module_info = $this->module_info;
 		} else {
-			$oModuleModel = getModel('module');
+			$oModuleModel = ModuleModel::getInstance();
 			$module_info = $oModuleModel->getModuleInfoByMid('sticker');
 		}
 
@@ -237,6 +237,13 @@ class stickerAdminView extends sticker
 		if(!isset($this->module_config->quick_tags)){
 			$this->module_config->quick_tags = '';
 		}
+		if(!isset($this->module_config->gif2mp4)){
+			$this->module_config->gif2mp4 = 'N';
+		}
+
+		$oFileModel = FileModel::getInstance();
+		$file_config = $oFileModel->getFileConfig();
+		Context::set('is_ffmpeg', function_exists('exec') && !empty($file_config->ffmpeg_command) && Rhymix\Framework\Storage::isExecutable($file_config->ffmpeg_command));
 
 		Context::set('module_info', $module_info);
 		Context::set('config', $this->module_config);
@@ -244,16 +251,16 @@ class stickerAdminView extends sticker
 	}
 
 	function dispStickerAdminCategoryInfo(){
-		$oDocumentModel = getModel('document');
+		$oDocumentModel = DocumentModel::getInstance();
 		Context::set('category_content', $oDocumentModel->getCategoryHTML($this->module_info->module_srl));
 
 		$this->setTemplateFile('category_list');
 	}
 
 	function dispStickerAdminGrantInfo(){
-		$oModuleAdminModel = getAdminModel('module');
+		$oModuleAdminModel = ModuleAdminModel::getInstance();
 
-		$oModuleModel = getModel('module');
+		$oModuleModel = ModuleModel::getInstance();
 		$this->mid_info = $oModuleModel->getModuleInfoByMid("sticker");
 
 		$admin_member = $oModuleModel->getAdminId($this->mid_info->module_srl);
@@ -266,14 +273,14 @@ class stickerAdminView extends sticker
 	function dispStickerAdminDesign(){
 		Context::set('module_info', $this->module_info);
 
-		$oLayoutModel = getModel('layout');
+		$oLayoutModel = LayoutModel::getInstance();
 		$layout_list = $oLayoutModel->getLayoutList();
 		$mlayout_list = $oLayoutModel->getLayoutList(0, 'M');
 
 		Context::set('layout_list', $layout_list);
 		Context::set('mlayout_list', $mlayout_list);
 
-		$oModuleModel = getModel('module');
+		$oModuleModel = ModuleModel::getInstance();
 		$skin_list = $oModuleModel->getSkins($this->module_path);
 		Context::set('skin_list', $skin_list);
 
@@ -286,10 +293,10 @@ class stickerAdminView extends sticker
 
 	function dispStickerAdminSkinInfo() {
 
-		$oModuleModel = getModel('module');
+		$oModuleModel = ModuleModel::getInstance();
 		$mid_info = $oModuleModel->getModuleInfoByMid("sticker");
 
-		$oModuleAdminModel = getAdminModel('module');
+		$oModuleAdminModel = ModuleAdminModel::getInstance();
 		$skin_content = $oModuleAdminModel->getModuleSkinHTML($mid_info->module_srl);
 		Context::set('skin_content', $skin_content);
 
@@ -298,10 +305,10 @@ class stickerAdminView extends sticker
 
 	function dispStickerAdminMobileSkinInfo() {
 
-		$oModuleModel = getModel('module');
+		$oModuleModel = ModuleModel::getInstance();
 		$mid_info = $oModuleModel->getModuleInfoByMid("sticker");
 
-		$oModuleAdminModel = getAdminModel('module');
+		$oModuleAdminModel = ModuleAdminModel::getInstance();
 		$skin_content = $oModuleAdminModel->getModuleMobileSkinHTML($mid_info->module_srl);
 		Context::set('skin_content', $skin_content);
 

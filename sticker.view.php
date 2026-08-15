@@ -13,7 +13,7 @@ class stickerView extends sticker
 		Context::set('config', $this->module_config);
 
 		if($this->mid != "sticker"){
-			$oModuleModel = getModel('module');
+			$oModuleModel = ModuleModel::getInstance();
 			$sticker_info = $oModuleModel->getModuleInfoByMid('sticker');
 			$this->module_info = $sticker_info;
 		}
@@ -74,7 +74,7 @@ class stickerView extends sticker
 
 		}
 
-		$oStickerModel = getModel('sticker');
+		$oStickerModel = StickerModel::getInstance();
 		$config = $oStickerModel->getConfig();
 		$subtitle = isset($config->browser_subtitle) ? trim($config->browser_subtitle) : '';
 
@@ -101,7 +101,7 @@ class stickerView extends sticker
 		$args1->sticker_srl = $sticker_srl;
 		$output1 = executeQueryArray('sticker.getStickerImage', $args1);
 
-		$oStickerModel = getModel('sticker');
+		$oStickerModel = StickerModel::getInstance();
 		$is_bougth = false;
 
 		$logged_info = Context::get('logged_info');
@@ -111,7 +111,7 @@ class stickerView extends sticker
 
 		Context::addBrowserTitle($output->data->title);
 
-		$oStickerController = getController('sticker');
+		$oStickerController = StickerController::getInstance();
 		$oStickerController->updateReadedCount($output->data);
 
 		Context::set('date', date('YmdHis'));
@@ -186,7 +186,7 @@ class stickerView extends sticker
 		Context::set('sticker', $sticker);
 		Context::set('sticker_file', $sticker_file);
 
-		$oEditorModel = getModel('editor');
+		$oEditorModel = EditorModel::getInstance();
 		$option = new stdClass();
 		$option->primary_key_name = 'sticker_srl';
 		$option->content_key_name = 'content';
@@ -200,7 +200,7 @@ class stickerView extends sticker
 		$option->height = 200;
 		$editor = $oEditorModel->getEditor($logged_info->member_srl, $option);
 
-		$oStickerModel = getModel('sticker');
+		$oStickerModel = StickerModel::getInstance();
 		$sticker_config = $oStickerModel->getConfig();
 
 		Context::set('editor', $editor);

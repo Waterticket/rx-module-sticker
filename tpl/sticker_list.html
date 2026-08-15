@@ -61,7 +61,8 @@
 
 			<tr loop="$list => $no, $oSticker">
 				<td class="title">
-					<img src="{$oSticker->main_image}" style="width:50px; height:50px; object-fit:cover; margin:0 5px 0 0;">
+					<img src="{$oSticker->main_image}" cond="!str_ends_with($oSticker->main_image, '.mp4')" style="width:50px; height:50px; object-fit:cover; margin:0 5px 0 0;">
+				<video src="{$oSticker->main_image}" cond="str_ends_with($oSticker->main_image, '.mp4')" poster="{substr($oSticker->main_image, 0, -4)}.webp" loading="lazy" autoplay="autoplay" muted="muted" loop="" playsinline="playsinline" style="width:50px; height:50px; object-fit:cover; margin:0 5px 0 0;"></video>
 					<a href="{getUrl('sticker_srl', $oSticker->sticker_srl, 'act', 'dispStickerAdminStickerView')}"><!--@if(trim($oSticker->title))-->{htmlspecialchars(cut_str($oSticker->title, 25))}<!--@else--><em>스티커가 없습니다.</em><!--@end--></a></td>
 				<td class="nowr"><a href="#popup_menu_area" class="member_{$oSticker->member_srl}">{$oSticker->nick_name}</a></td>
 				<td class="nowr">{$oSticker->readed_count}</td>

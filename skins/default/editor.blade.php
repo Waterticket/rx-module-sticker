@@ -69,7 +69,7 @@
 					data-kind="existing"
 					data-no="{{ $no }}"
 					data-removable="{{ $no > $config->minUploads ? '1' : '0' }}">
-					<img src="{{ $file->url }}" alt="{{ $file->file_name }}" />
+					@include('_media', ['url' => $file->url, 'alt' => $file->file_name])
 				</li>
 				@endforeach
 			</ul>

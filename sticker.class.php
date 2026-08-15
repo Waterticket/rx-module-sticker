@@ -27,8 +27,8 @@ class sticker extends ModuleObject
 
 	function moduleInstall()
 	{
-		$oModuleModel = getModel('module');
-		$oModuleController = getController('module');
+		$oModuleModel = ModuleModel::getInstance();
+		$oModuleController = ModuleController::getInstance();
 
 		$sticker_info = $oModuleModel->getModuleInfoByMid('sticker');
 		if(!$sticker_info->module_srl) {
@@ -73,6 +73,7 @@ class sticker extends ModuleObject
 		$config->resizing = "Y";
 		$config->maxPx = 200;
 		$config->gifResizingIf = "Y";
+		$config->gif2mp4 = "N";
 		$config->target_width = "Y";
 		$config->image_quality = 100;
 		$config->minUploads = 10;
@@ -99,8 +100,8 @@ class sticker extends ModuleObject
 
 	function moduleUninstall()
 	{
-		$oModuleModel = getModel('module');
-		$oModuleController = getController('module');
+		$oModuleModel = ModuleModel::getInstance();
+		$oModuleController = ModuleController::getInstance();
 
 		//트리거 삭제
 		foreach ($this->triggers as $trigger)
@@ -126,7 +127,7 @@ class sticker extends ModuleObject
 
 	function checkUpdate()
 	{
-		$oModuleModel = getModel('module');
+		$oModuleModel = ModuleModel::getInstance();
 		foreach ($this->triggers as $trigger)
 		{
 			if (!$oModuleModel->getTrigger($trigger[0], $trigger[1], $trigger[2], $trigger[3], $trigger[4]))
@@ -136,7 +137,7 @@ class sticker extends ModuleObject
 		}
 
 		$config = $oModuleModel->getModuleConfig('sticker');
-		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags)))
+		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags) || !isset($config->gif2mp4)))
 		{
 			return true;
 		}
@@ -146,9 +147,8 @@ class sticker extends ModuleObject
 
 	function moduleUpdate()
 	{
-
-		$oModuleModel = getModel('module');
-		$oModuleController = getController('module');
+		$oModuleModel = ModuleModel::getInstance();
+		$oModuleController = ModuleController::getInstance();
 		foreach ($this->triggers as $trigger)
 		{
 			if (!$oModuleModel->getTrigger($trigger[0], $trigger[1], $trigger[2], $trigger[3], $trigger[4]))
@@ -158,7 +158,7 @@ class sticker extends ModuleObject
 		}
 
 		$config = $oModuleModel->getModuleConfig('sticker');
-		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags)))
+		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags) || !isset($config->gif2mp4)))
 		{
 			if (!isset($config->browser_subtitle))
 			{
@@ -167,6 +167,10 @@ class sticker extends ModuleObject
 			if (!isset($config->quick_tags))
 			{
 				$config->quick_tags = '';
+			}
+			if (!isset($config->gif2mp4))
+			{
+				$config->gif2mp4 = 'N';
 			}
 			$oModuleController->insertModuleConfig('sticker', $config);
 		}
@@ -196,7 +200,7 @@ class sticker extends ModuleObject
 			global $lang;
 			$message = vsprintf($lang->$message, array_slice($args, 2));
 		}
-		return class_exists('BaseObject') ? new BaseObject($status, $message) : new Object($status, $message);
+		return new BaseObject($status, $message);
 	}
 }
 

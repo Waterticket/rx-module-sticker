@@ -23,7 +23,7 @@
 			<li class="stk-card">
 				<a class="stk-card__thumb" href="{{ getUrl('', 'mid', $mid, 'sticker_srl', $item->sticker_srl) }}">
 					@if($item->main_image)
-						<img src="{{ $item->main_image }}" alt="{{ $item->title }}" loading="lazy" />
+						@include('_media', ['url' => $item->main_image, 'alt' => $item->title, 'lazy' => true])
 					@endif
 					@if($item->status === 'CHECK')
 						<span class="stk-card__badge">검토중</span>

@@ -6,6 +6,9 @@
  * @brief  Sticker module admin controller class.
  */
 
+use Rhymix\Framework\Queue;
+use Rhymix\Modules\Sticker\Services\ImageProcessor;
+
 class stickerAdminController extends sticker
 {
 	function init()
@@ -14,8 +17,7 @@ class stickerAdminController extends sticker
 
 	function procStickerAdminConfig()
 	{
-
-		$oModuleController = getController('module');
+		$oModuleController = ModuleController::getInstance();
 
 		$config = Context::getRequestVars();
 		getDestroyXeVars($config);
@@ -34,7 +36,7 @@ class stickerAdminController extends sticker
 		}
 
 		if(!empty($config->browser_title)){
-			$oModuleModel = getModel('module');
+			$oModuleModel = ModuleModel::getInstance();
 			$sticker_info = $oModuleModel->getModuleInfoByMid('sticker');
 			$sticker_info->browser_title = $config->browser_title;
 			unset($config->browser_title);
@@ -53,13 +55,61 @@ class stickerAdminController extends sticker
 		$this->setRedirectUrl($returnUrl);
 	}
 
+	/**
+	 * 기존에 올라와 있는 GIF 스티커들을 건드리지 않고 그대로 둔 채, 관리자가 원할 때만
+	 * 눌러서 MP4로 일괄 전환하는 버튼의 처리부. ImageProcessor::processAsync()를 그대로
+	 * 재사용한다 - 신규 업로드 큐 처리와 로직이 동일해서(검증 -> 변환 -> 파일 교체) 새로
+	 * 만들 필요가 없다.
+	 */
+	function procStickerAdminMigrateGifToMp4()
+	{
+		if (!config('queue.enabled'))
+		{
+			return $this->createObject(-1, 'msg_stkr_queue_required');
+		}
+
+		$oStickerModel = StickerModel::getInstance();
+		$module_config = $oStickerModel->getConfig();
+		if (($module_config->gif2mp4 ?? 'N') !== 'Y')
+		{
+			return $this->createObject(-1, 'msg_stkr_gif2mp4_disabled');
+		}
+
+		$args = new stdClass();
+		$args->ext = '.gif';
+		$output = executeQueryArray('sticker.getGifStickerFiles', $args);
+		if (!$output->toBool())
+		{
+			return $output;
+		}
+
+		foreach ((array)$output->data as $row)
+		{
+			Queue::addTask(ImageProcessor::class . '::processAsync', (object)[
+				'sticker_srl' => $row->sticker_srl,
+				'sticker_file_srl' => $row->sticker_file_srl,
+				'file_srl' => $row->file_srl,
+				'member_srl' => $row->member_srl,
+				'uploaded_filename' => $row->url,
+				'source_filename' => $row->file_name,
+				'regdate' => $row->regdate,
+			]);
+		}
+
+		$count = count((array)$output->data);
+		$this->setMessage($count > 0 ? sprintf('GIF 스티커 %d개를 MP4 변환 큐에 등록했습니다.', $count) : '변환할 GIF 스티커가 없습니다.');
+
+		$returnUrl = Context::get('success_return_url') ? Context::get('success_return_url') : getNotEncodedUrl('', 'module', 'admin', 'act', 'dispStickerAdminConfig');
+		$this->setRedirectUrl($returnUrl);
+	}
+
 	function procStickerAdminDesign(){
 
 		if(Context::getRequestMethod() == 'GET') return $this->createObject(-1, 'msg_invalid_request');
 
-		$oModuleController = getController('module');
+		$oModuleController = ModuleController::getInstance();
 
-		$oModuleModel = getModel('module');
+		$oModuleModel = ModuleModel::getInstance();
 		$sticker_info = $oModuleModel->getModuleInfoByMid('sticker');
 		if($sticker_info){
 			$sticker_info->skin = Context::get('skin');
@@ -89,7 +139,7 @@ class stickerAdminController extends sticker
 		unset($config->module);
 		unset($config->ruleset);
 
-		$oStickerModel = getModel('sticker');
+		$oStickerModel = StickerModel::getInstance();
 		$oSticker = $oStickerModel->getSticker($sticker_srl);
 		if(!$oSticker){
 			return $this->createObject(-1,'msg_invalid_sticker');
@@ -137,7 +187,7 @@ class stickerAdminController extends sticker
 		$args->sticker_srl = $sticker_srl;
 		$args->title = cut_str(htmlspecialchars(strip_tags($title), ENT_QUOTES, 'UTF-8', false), 100);
 		$args->tag = cut_str(htmlspecialchars(strip_tags((string)($config->tag ?? '')), ENT_QUOTES, 'UTF-8', false), 250);
-		$args->content = removeHackTag($content);
+		$args->content = Rhymix\Framework\Filters\HTMLFilter::clean((string) $content);
 
 		if(!empty($config->readed_count_e) && $config->readed_count_e === 'Y'){
 			$args->readed_count = empty($config->readed_count) ? 0 : intval($config->readed_count);
@@ -174,13 +224,13 @@ class stickerAdminController extends sticker
 	function procStickerAdminDelete(){
 
 		$sticker_srl = Context::get('sticker_srl');
-		$oStickerModel = getModel('sticker');
+		$oStickerModel = StickerModel::getInstance();
 		$oSticker = $oStickerModel->getSticker($sticker_srl);
 		if(!$oSticker){
 			return $this->createObject(-1,'msg_invalid_sticker');
 		}
 
-		$oStickerController = getController('sticker');
+		$oStickerController = StickerController::getInstance();
 		$oStickerController->_deleteSticker($sticker_srl);
 		$oStickerController->_deleteStickerFiles($sticker_srl);
 		$oStickerController->_deleteStickerBuyByStickerSrl($sticker_srl);
