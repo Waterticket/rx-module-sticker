@@ -241,7 +241,7 @@ class stickerController extends sticker
 	}
 
 
-	function triggerBeforeDisplay($obj)
+	function triggerBeforeDisplay(&$obj)
 	{
 		if (!Context::get('document_srl'))
 		{
@@ -276,14 +276,22 @@ class stickerController extends sticker
 			//!!!S
 			if (empty($_COOKIE['txtmode']))
 			{
-				$part = '<!--BeforeComment(' . $matches[1] . ',' . $matches[2] . ')--><div class="comment_' . $matches[1] . '_' . $matches[2] . ' xe_content"><a href="' . $sticker_url . '" title="' . $data->title . '" style="display:block;background-image:url(' . $data->url . ');background-size:cover;background-position:50% 50%;width:140px !important;height:140px !important;border-radius:3px;" alt="' . $file_name . '"></a></div><!--AfterComment(' . $matches[1] . ',' . $matches[2] . ')-->';
+				// 텍스트 치환
+				if (str_ends_with($data->url, '.mp4'))
+				{
+					$poster = substr($data->url, 0, -4) . '.webp';
+					$part = '<!--BeforeComment(' . $matches[1] . ',' . $matches[2] . ')--><div class="comment_' . $matches[1] . '_' . $matches[2] . ' xe_content"><a href="' . $sticker_url . '" title="' . $data->title . '" style="display:block;width:140px !important;height:140px !important;border-radius:3px;overflow:hidden;"><video src="' . $data->url . '" poster="' . $poster . '" autoplay muted loop playsinline preload="metadata" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"></video></a></div><!--AfterComment(' . $matches[1] . ',' . $matches[2] . ')-->';
+				}
+				else
+				{
+					$part = '<!--BeforeComment(' . $matches[1] . ',' . $matches[2] . ')--><div class="comment_' . $matches[1] . '_' . $matches[2] . ' xe_content"><a href="' . $sticker_url . '" title="' . $data->title . '" style="display:block;background-image:url(' . $data->url . ');background-size:cover;background-position:50% 50%;width:140px !important;height:140px !important;border-radius:3px;" alt="' . $file_name . '"></a></div><!--AfterComment(' . $matches[1] . ',' . $matches[2] . ')-->';
+				}
 			}
 			else
 			{
 				$part = '<!--BeforeComment(' . $matches[1] . ',' . $matches[2] . ')--><div class="txtmode comment_' . $matches[1] . '_' . $matches[2] . ' xe_content"><p style="margin:1em;">데이터 절약 모드 작동중<BR><a href="' . $sticker_url . '" target="_blank" style="color:#777;">(' . $data->title . ')</a></p></div><!--AfterComment(' . $matches[1] . ',' . $matches[2] . ')-->';
 			}
 			//!!!E
-
 		}
 		else
 		{

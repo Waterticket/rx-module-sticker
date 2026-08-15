@@ -240,6 +240,9 @@ class stickerAdminView extends sticker
 		if(!isset($this->module_config->gif2mp4)){
 			$this->module_config->gif2mp4 = 'N';
 		}
+		if(!isset($this->module_config->notify_message_type)){
+			$this->module_config->notify_message_type = 'text';
+		}
 
 		$oFileModel = FileModel::getInstance();
 		$file_config = $oFileModel->getFileConfig();

@@ -340,4 +340,14 @@
 		<value xml:lang="ko"><![CDATA[삭제된 스티커 표시]]></value>
 	</item>
 
+	<item name="stkr_notify_message_type">
+		<value xml:lang="ko"><![CDATA[알림 메세지 표시 방식]]></value>
+	</item>
+	<item name="stkr_notify_message_type_text">
+		<value xml:lang="ko"><![CDATA[스티커 메세지]]></value>
+	</item>
+	<item name="cmd_notify_message_type">
+		<value xml:lang="ko"><![CDATA[스티커로만 작성된 댓글의 알림 메세지에 {@sticker:...} 코드가 그대로 노출되지 않도록 표시 방식을 설정합니다.<BR>'사용 안 함'은 기존과 동일하게 원본 코드를 그대로 표시하고, '스티커 메세지'는 [스티커] 문구로 바꿔서 표시합니다.]]></value>
+	</item>
+
 </lang>

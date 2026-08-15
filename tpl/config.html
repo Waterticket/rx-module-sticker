@@ -452,6 +452,17 @@
 			</div>
 		</div>
 
+		<div class="x_control-group">
+			<label for="notify_message_type" class="x_control-label">{$lang->stkr_notify_message_type}</label>
+			<div class="x_controls">
+				<select name="notify_message_type" id="notify_message_type">
+					<option value="none" selected="selected"|cond="$config->notify_message_type == 'none'">{$lang->not_use}</option>
+					<option value="text" selected="selected"|cond="$config->notify_message_type == 'text'">{$lang->stkr_notify_message_type_text}</option>
+				</select>
+				<a href="#notify_message_type_help" class="x_icon-question-sign" data-toggle="#notify_message_type_help">{$lang->help}</a>
+				<p id="notify_message_type_help" class="x_help-block" hidden="hidden">{$lang->cmd_notify_message_type}</p>
+			</div>
+		</div>
 
 
 	</section>

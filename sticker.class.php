@@ -13,18 +13,6 @@ class sticker extends ModuleObject
 	 */
 	const DEFAULT_BROWSER_SUBTITLE = '사이트에서 사용할 스티커를 구매해보세요.';
 
-	private $triggers = array(
-		array( 'member.deleteMember',			'sticker',	'controller',	'triggerDeleteMember',					'after'	),
-		array( 'member.getMemberMenu',		'sticker',	'controller',	'triggerMemberMenu',						'after'	),
-		array( 'document.insertDocument',	'sticker',	'controller',	'triggerBeforeInsertDocument',      'before'	),
-		array( 'document.updateDocument',	'sticker',	'controller',	'triggerBeforeUpdateDocument',      'before'	),
-		array( 'comment.insertComment',		'sticker',	'controller',	'triggerBeforeInsertComment',       'before'	),
-		array( 'comment.updateComment',		'sticker',	'controller',	'triggerBeforeUpdateComment',       'before'	),
-		array( 'moduleHandler.init',			'sticker',	'controller',	'triggerBeforeModuleInit',				'before'	), // member메뉴 추가
-		array( 'display',							'sticker',	'controller',	'triggerBeforeDisplay',					'before'	)
-	);
-
-
 	function moduleInstall()
 	{
 		$oModuleModel = ModuleModel::getInstance();
@@ -85,29 +73,16 @@ class sticker extends ModuleObject
 		$config->file_ext = "jpg,jpeg,png,gif";
 		$config->cmt_allow_modify = "Y";
 		$config->cmt_max_sticker_count = 0;
+		$config->notify_message_type = "text";
 
 		$oModuleController->insertModuleConfig('sticker', $config);
-
-		foreach ($this->triggers as $trigger) {
-			$oModuleController->insertTrigger($trigger[0], $trigger[1], $trigger[2], $trigger[3], $trigger[4]);
-		}
-
 		return $this->createObject();
 	}
-
-
-
 
 	function moduleUninstall()
 	{
 		$oModuleModel = ModuleModel::getInstance();
 		$oModuleController = ModuleController::getInstance();
-
-		//트리거 삭제
-		foreach ($this->triggers as $trigger)
-		{
-			$oModuleController->deleteTrigger($trigger[0], $trigger[1], $trigger[2], $trigger[3], $trigger[4]);
-		}
 
 		//페이지 삭제
 		$sticker_info = $oModuleModel->getModuleInfoByMid('sticker');
@@ -122,22 +97,11 @@ class sticker extends ModuleObject
 
 	}
 
-
-
-
 	function checkUpdate()
 	{
 		$oModuleModel = ModuleModel::getInstance();
-		foreach ($this->triggers as $trigger)
-		{
-			if (!$oModuleModel->getTrigger($trigger[0], $trigger[1], $trigger[2], $trigger[3], $trigger[4]))
-			{
-				return true;
-			}
-		}
-
 		$config = $oModuleModel->getModuleConfig('sticker');
-		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags) || !isset($config->gif2mp4)))
+		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags) || !isset($config->gif2mp4) || !isset($config->notify_message_type)))
 		{
 			return true;
 		}
@@ -149,16 +113,9 @@ class sticker extends ModuleObject
 	{
 		$oModuleModel = ModuleModel::getInstance();
 		$oModuleController = ModuleController::getInstance();
-		foreach ($this->triggers as $trigger)
-		{
-			if (!$oModuleModel->getTrigger($trigger[0], $trigger[1], $trigger[2], $trigger[3], $trigger[4]))
-			{
-				$oModuleController->insertTrigger($trigger[0], $trigger[1], $trigger[2], $trigger[3], $trigger[4]);
-			}
-		}
 
 		$config = $oModuleModel->getModuleConfig('sticker');
-		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags) || !isset($config->gif2mp4)))
+		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags) || !isset($config->gif2mp4) || !isset($config->notify_message_type)))
 		{
 			if (!isset($config->browser_subtitle))
 			{
@@ -171,6 +128,10 @@ class sticker extends ModuleObject
 			if (!isset($config->gif2mp4))
 			{
 				$config->gif2mp4 = 'N';
+			}
+			if (!isset($config->notify_message_type))
+			{
+				$config->notify_message_type = 'text';
 			}
 			$oModuleController->insertModuleConfig('sticker', $config);
 		}
