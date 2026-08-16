@@ -131,7 +131,7 @@
 				id: 'e' + (self.seq++),
 				kind: 'existing',
 				no: no,
-				url: node.querySelector('img').getAttribute('src'),
+				url: node.querySelector('img, video').getAttribute('src'),
 				main: no === 0,
 				removable: node.getAttribute('data-removable') === '1',
 				file: null
@@ -313,7 +313,13 @@
 			}
 
 			html += '<li class="' + classes.join(' ') + '" data-id="' + item.id + '">';
-			html += '<img src="' + item.url + '" alt="" />';
+
+			if (/\.mp4$/i.test(item.url)) {
+				html += '<video src="' + item.url + '" poster="' + item.url.slice(0, -4) + '.webp" autoplay muted loop playsinline></video>';
+			}
+			else {
+				html += '<img src="' + item.url + '" alt="" />';
+			}
 
 			if (item.kind === 'new' || item.removable) {
 				html += '<button type="button" class="stk-uploader__remove" data-action="remove" title="삭제">&times;</button>';
