@@ -313,6 +313,9 @@
 	<item name="msg_stkr_cannot_use_ffmpeg">
 		<value xml:lang="ko"><![CDATA[이 기능을 사용하려면 관리자 > 서비스운영 > 파일 업로드 설정에서 ffmpeg 명령을 실행할 수 있도록 설정해야 합니다.]]></value>
 	</item>
+	<item name="cmd_go_file_upload_config">
+		<value xml:lang="ko"><![CDATA[파일 업로드 설정으로 이동]]></value>
+	</item>
 
 	<item name="stkr_migrate_gif2mp4">
 		<value xml:lang="ko"><![CDATA[기존 GIF 스티커 일괄 변환]]></value>
@@ -322,6 +325,12 @@
 	</item>
 	<item name="msg_stkr_queue_required">
 		<value xml:lang="ko"><![CDATA[일괄 변환은 큐(비동기 작업)가 켜져 있어야 사용할 수 있습니다. 관리자 > 서비스운영 > 큐 설정을 확인해주세요.]]></value>
+	</item>
+	<item name="msg_stkr_async_recommended">
+		<value xml:lang="ko"><![CDATA[비동기 작업(큐)이 꺼져있습니다. 안정적인 동작을 위해 비동기 작업을 켜는 것을 권장합니다.]]></value>
+	</item>
+	<item name="cmd_go_queue_config">
+		<value xml:lang="ko"><![CDATA[비동기 작업 설정으로 이동]]></value>
 	</item>
 	<item name="msg_stkr_gif2mp4_disabled">
 		<value xml:lang="ko"><![CDATA[GIF → MP4 변환 옵션을 먼저 켜고 저장한 뒤 다시 시도해주세요.]]></value>

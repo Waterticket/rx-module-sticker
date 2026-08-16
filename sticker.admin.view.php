@@ -247,6 +247,7 @@ class stickerAdminView extends sticker
 		$oFileModel = FileModel::getInstance();
 		$file_config = $oFileModel->getFileConfig();
 		Context::set('is_ffmpeg', function_exists('exec') && !empty($file_config->ffmpeg_command) && Rhymix\Framework\Storage::isExecutable($file_config->ffmpeg_command));
+		Context::set('is_queue_enabled', (bool)config('queue.enabled'));
 
 		Context::set('module_info', $module_info);
 		Context::set('config', $this->module_config);

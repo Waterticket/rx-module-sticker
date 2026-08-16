@@ -5,6 +5,10 @@
 	<p>{$XE_VALIDATOR_MESSAGE}</p>
 </div>
 
+<div cond="!$is_queue_enabled" class="message warning">
+	<p>{$lang->msg_stkr_async_recommended} <a href="{getUrl('', 'module', 'admin', 'act', 'dispAdminConfigQueue')}" target="_blank">{$lang->cmd_go_queue_config}</a></p>
+</div>
+
 <form action="./" method="post" class="x_form-horizontal">
 	<input type="hidden" name="module" value="sticker">
 	<input type="hidden" name="act" value="procStickerAdminConfig">
@@ -337,7 +341,7 @@
 				<input type="radio" id="gif2mp4_not_use" name="gif2mp4" value="N" checked="checked"|cond="$config->gif2mp4 == 'N'" disabled="disabled"|cond="!$is_ffmpeg">{$lang->not_use}</label>
 				<a href="#gif2mp4_help" class="x_icon-question-sign" data-toggle="#gif2mp4_help">{$lang->help}</a>
 				<p id="gif2mp4_help" class="x_help-block" hidden="hidden">{$lang->cmd_gif2mp4}</p>
-				<p class="x_text-info" cond="!$is_ffmpeg">{$lang->msg_stkr_cannot_use_ffmpeg}</p>
+				<p class="x_text-info" cond="!$is_ffmpeg">{$lang->msg_stkr_cannot_use_ffmpeg} <a href="{getUrl('', 'module', 'admin', 'act', 'dispFileAdminUploadConfig')}" target="_blank">{$lang->cmd_go_file_upload_config}</a></p>
 			</div>
 		</div>
 
