@@ -1370,6 +1370,7 @@ class stickerController extends sticker
 
 		ImageProcessor::finalizeFile($file_srl, $result);
 		$this->_insertSickerFile($sticker_srl, $file_srl, $result->source_filename, $result->url, $no);
+		ImageProcessor::deleteOriginalGif($result);
 
 		return true;
 	}
@@ -1426,6 +1427,7 @@ class stickerController extends sticker
 		//sticker_files테이블 갱신전 기존 파일 삭제
 		$this->_deleteFile($origin_obj->file_srl);
 		$this->_updateStickerFileInfo($origin_obj->sticker_file_srl, $file_srl, $result->source_filename, $result->url, $origin_obj->no);
+		ImageProcessor::deleteOriginalGif($result);
 
 		return true;
 	}

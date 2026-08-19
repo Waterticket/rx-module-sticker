@@ -3,6 +3,7 @@
 namespace Rhymix\Modules\Sticker\Services;
 
 use Rhymix\Framework\Image;
+use Rhymix\Framework\Queue;
 use Rhymix\Framework\Security;
 use Rhymix\Framework\Storage;
 
@@ -17,6 +18,7 @@ class ImageProcessor
 {
 	const CODE_IMAGE_TOO_SMALL = 2;
 	const CODE_IMAGE_TOO_LARGE = 3;
+	const ORIGINAL_GIF_DELETE_DELAY = 300;
 
 	/**
 	 * 업로드된 파일이 처리 가능한 이미지인지 검증한다.
@@ -144,7 +146,7 @@ class ImageProcessor
 
 		self::finalizeFile($args->file_srl, $result);
 
-		executeQuery('sticker.updateStickerFile', (object)[
+		$output = executeQuery('sticker.updateStickerFile', (object)[
 			'sticker_srl' => $args->sticker_srl,
 			'sticker_file_srl' => $args->sticker_file_srl,
 			'member_srl' => $args->member_srl,
@@ -153,6 +155,66 @@ class ImageProcessor
 			'url' => $result->url,
 			'regdate' => $args->regdate,
 		]);
+		if (!$output->toBool())
+		{
+			throw new \RuntimeException('sticker file update failed after background processing: ' . $args->file_srl);
+		}
+
+		self::scheduleOriginalGifDeletion($args, $result);
+	}
+
+	/**
+	 * GIF -> MP4 변환 성공 후 원본 GIF를 ORIGINAL_GIF_DELETE_DELAY초 뒤에 지운다. 먼저 sticker_files의 URL을
+	 * MP4로 바꾼 다음 예약하므로, 상세 페이지가 삭제된 GIF URL을 읽는 구간이 없다.
+	 */
+	private static function scheduleOriginalGifDeletion(object $args, object $result): void
+	{
+		if (empty($result->original_gif_url) || !config('queue.enabled'))
+		{
+			return;
+		}
+
+		Queue::addTaskAt(time() + self::ORIGINAL_GIF_DELETE_DELAY, self::class . '::deleteOriginalGifAsync', (object)[
+			'sticker_file_srl' => $args->sticker_file_srl,
+			'file_srl' => $args->file_srl,
+			'original_gif_url' => $result->original_gif_url,
+			'converted_mp4_url' => $result->url,
+		]);
+	}
+
+	/**
+	 * 예약된 원본 GIF 삭제 작업. 변환 후 스티커가 수정 또는 삭제된 경우에는 원본을
+	 * 건드리지 않는다. 이 확인이 없으면 수정 등을 통해 같은 슬롯에 재업로드된 파일을
+	 * 잘못 삭제할 수 있다.
+	 */
+	public static function deleteOriginalGifAsync(object $args): void
+	{
+		if (empty($args->sticker_file_srl) || empty($args->file_srl) || empty($args->original_gif_url) || empty($args->converted_mp4_url))
+		{
+			return;
+		}
+
+		$output = executeQuery('sticker.getStickerFileByStickerFileSrl', (object)[
+			'sticker_file_srl' => $args->sticker_file_srl,
+		]);
+		$current = $output->data ?? null;
+		if (!$output->toBool() || !$current || intval($current->file_srl) !== intval($args->file_srl) || $current->url !== $args->converted_mp4_url)
+		{
+			return;
+		}
+
+		\FileHandler::removeFile($args->original_gif_url);
+	}
+
+	/**
+	 * 큐를 사용하지 않는 동기 처리에서 DB 반영 후 원본 GIF를 정리한다.
+	 */
+	public static function deleteOriginalGif(object $result): void
+	{
+		if (!empty($result->original_gif_url))
+		{
+			\FileHandler::removeFile($result->original_gif_url);
+		}
 	}
 
 	/**
@@ -215,13 +277,12 @@ class ImageProcessor
 		// 브라우저가 알아서 처리) 반환값은 확인하지 않는다.
 		\FileHandler::createImageFile($uploaded_filename, $path . $basename . '.webp', $width, $height, 'webp', 'fill');
 
-		\FileHandler::removeFile($uploaded_filename);
-
 		return (object)[
 			'url' => $output_name,
 			'source_filename' => substr($validated->source_filename, 0, strrpos($validated->source_filename, '.')) . '.mp4',
 			'changed' => true,
 			'file_size' => filesize($output_name),
+			'original_gif_url' => $uploaded_filename,
 		];
 	}
 
