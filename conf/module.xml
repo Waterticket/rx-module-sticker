@@ -20,7 +20,9 @@
 	<permissions />
     <actions>
         <action name="getCommentStickerList" type="model" />
+        <action name="getStickerPickerList" type="model" />
         <action name="getStickerElemList" type="model" />
+        <action name="resolveStickers" type="model" />
 
         <action name="dispStickerList" type="view" index="true">
 			<route route="$sticker_srl:int" />
@@ -67,7 +69,9 @@
 		<eventHandler after="member.deleteMember" class="controller" method="triggerDeleteMember" />
 		<eventHandler after="member.getMemberMenu" class="controller" method="triggerMemberMenu" />
 		<eventHandler before="document.insertDocument" class="controller" method="triggerBeforeInsertDocument" />
+		<eventHandler after="document.insertDocument" class="controller" method="triggerAfterInsertDocument" />
 		<eventHandler before="document.updateDocument" class="controller" method="triggerBeforeUpdateDocument" />
+		<eventHandler after="document.updateDocument" class="controller" method="triggerAfterUpdateDocument" />
 		<eventHandler before="comment.insertComment" class="controller" method="triggerBeforeInsertComment" />
 		<eventHandler before="comment.updateComment" class="controller" method="triggerBeforeUpdateComment" />
 		<eventHandler before="moduleHandler.init" class="controller" method="triggerBeforeModuleInit" />

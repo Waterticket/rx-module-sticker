@@ -12,6 +12,8 @@ use Rhymix\Modules\Sticker\Services\ImageProcessor;
 
 class stickerController extends sticker
 {
+	protected $pendingDocumentStickers = array();
+
 	function init()
 	{
 		//직접적으로 sticker모듈이 로딩되었을 때만 적용됨.
@@ -98,21 +100,25 @@ class stickerController extends sticker
 
 	function triggerBeforeInsertDocument($obj)
 	{
-		$oStickerModel = StickerModel::getInstance();
-		$module_config = $oStickerModel->getConfig();
-
-		if ($module_config->use != "Y")
-		{
-			return $this->createObject();
-		}
-
-		$content = $obj->content;
-		$content = preg_replace('/{@sticker:[0-9]+\|[0-9]+}/i', "", $content);
-
-		$obj->content = $content;
+		return $this->_processDocumentStickers($obj, false);
 	}
 
 	function triggerBeforeUpdateDocument($obj)
+	{
+		return $this->_processDocumentStickers($obj, true);
+	}
+
+	function triggerAfterInsertDocument($obj)
+	{
+		return $this->_accountDocumentStickers($obj);
+	}
+
+	function triggerAfterUpdateDocument($obj)
+	{
+		return $this->_accountDocumentStickers($obj);
+	}
+
+	function _processDocumentStickers($obj, $is_update)
 	{
 		$oStickerModel = StickerModel::getInstance();
 		$module_config = $oStickerModel->getConfig();
@@ -122,10 +128,83 @@ class stickerController extends sticker
 			return $this->createObject();
 		}
 
-		$content = $obj->content;
-		$content = preg_replace('/{@sticker:[0-9]+\|[0-9]+}/i', "", $content);
+		$logged_info = Context::get('logged_info');
+		$member_srl = $logged_info ? (int)$logged_info->member_srl : 0;
+		$stickers = array();
+		$content = preg_replace('/{@sticker:[0-9]+\|[0-9]+}/i', '', (string)$obj->content);
+		$content = preg_replace_callback('/<img\b[^>]*\bdata-rx-sticker(?:\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+))?[^>]*>/i', function($match) use (&$stickers, $member_srl, $logged_info){
+			if(!preg_match('/\bdata-rx-sticker\s*=\s*(["\'])([0-9]+)\|([0-9]+)\1/i', $match[0], $identity)) return '';
+			$sticker_srl = (int)$identity[2];
+			$sticker_file_srl = (int)$identity[3];
+			$is_admin = $logged_info && ($logged_info->is_admin ?? 'N') === 'Y';
+			if((!$is_admin && !$this->_checkFakeSticker($sticker_srl, $sticker_file_srl, $member_srl)) || !$this->_checkUsableSticker($sticker_srl)) return '';
+			$output = $this->_getStickerComment($sticker_file_srl);
+			if(!$output->toBool() || empty($output->data) || (int)$output->data->sticker_srl !== $sticker_srl) return '';
+			$stickers[] = array($sticker_srl, $sticker_file_srl);
+			return $this->_documentStickerTag($output->data, $match[0]);
+		}, $content);
 
+		$limit = max(0, (int)($module_config->doc_max_sticker_count ?? 30));
+		if($limit && count($stickers) > $limit) return $this->createObject(-1, 'msg_exceed_document_sticker_count');
 		$obj->content = $content;
+		$pending = $stickers;
+		if($is_update && !empty($obj->document_srl)){
+			$document = DocumentModel::getDocument($obj->document_srl);
+			$old = $this->_extractDocumentStickerIds($document ? (string)$document->get('content') : '');
+			foreach($old as $identity){
+				$key = array_search($identity, $pending);
+				if($key !== false) unset($pending[$key]);
+			}
+		}
+		$this->pendingDocumentStickers[spl_object_id($obj)] = array_values($pending);
+		return $this->createObject();
+	}
+
+	function _accountDocumentStickers($obj)
+	{
+		$key = spl_object_id($obj);
+		$stickers = $this->pendingDocumentStickers[$key] ?? array();
+		unset($this->pendingDocumentStickers[$key]);
+		$logged_info = Context::get('logged_info');
+		$member_srl = $logged_info ? (int)$logged_info->member_srl : 0;
+		foreach($stickers as $identity){
+			$this->_increaseStickerUsedCount($identity[0], $identity[1], $member_srl);
+			$log = new stdClass();
+			$log->sticker_srl = $identity[0];
+			$log->sticker_file_srl = $identity[1];
+			$log->member_srl = $member_srl;
+			$log->document_srl = (int)($obj->document_srl ?? 0);
+			$log->type = 'insertDocumentSticker';
+			$this->insertStickerLog($log);
+		}
+		return $this->createObject();
+	}
+
+	function _extractDocumentStickerIds($content)
+	{
+		$stickers = array();
+		preg_match_all('/\bdata-rx-sticker\s*=\s*(["\'])([0-9]+)\|([0-9]+)\1/i', $content, $matches, PREG_SET_ORDER);
+		foreach($matches as $match) $stickers[] = array((int)$match[2], (int)$match[3]);
+		return $stickers;
+	}
+
+	function _documentStickerTag($data, $source_tag)
+	{
+		$width = 100;
+		$height = 100;
+		if(preg_match('/\bwidth\s*=\s*(["\']?)([0-9]+)\1/i', $source_tag, $match)) $width = min(100, max(24, (int)$match[2]));
+		if(preg_match('/\bheight\s*=\s*(["\']?)([0-9]+)\1/i', $source_tag, $match)) $height = min(100, max(24, (int)$match[2]));
+		if(preg_match('/\bstyle\s*=\s*(["\'])(.*?)\1/i', $source_tag, $match)){
+			if(preg_match('/(?:^|;)\s*width\s*:\s*([0-9]+)px/i', $match[2], $size)) $width = min(100, max(24, (int)$size[1]));
+			if(preg_match('/(?:^|;)\s*height\s*:\s*([0-9]+)px/i', $match[2], $size)) $height = min(100, max(24, (int)$size[1]));
+		}
+		$is_video = str_ends_with(strtolower((string)$data->url), '.mp4');
+		$src = $is_video ? substr($data->url, 0, -4) . '.webp' : $data->url;
+		return sprintf(
+			'<img src="%s" alt="%s" width="%d" height="%d" style="width:%dpx;height:%dpx" data-rx-sticker="%d|%d" data-rx-sticker-type="%s">',
+			htmlspecialchars($src, ENT_QUOTES, 'UTF-8'), htmlspecialchars($data->title, ENT_QUOTES, 'UTF-8'),
+			$width, $height, $width, $height, $data->sticker_srl, $data->sticker_file_srl, $is_video ? 'video' : 'image'
+		);
 	}
 
 	function triggerBeforeInsertComment($obj)
@@ -243,19 +322,52 @@ class stickerController extends sticker
 
 	function triggerBeforeDisplay(&$obj)
 	{
-		if (!Context::get('document_srl'))
-		{
-			return $this->createObject();
-		}
-
 		$temp_output = preg_replace_callback('/<!--BeforeComment\(([0-9]+),([0-9]+)\)-->.*{@sticker:([0-9]+)\|([0-9]+)}.*<!--AfterComment\([0-9]+,[0-9]+\)-->/', array(
 			$this,
 			'stickerCommentCallback'
 		), $obj);
+		$temp_output = preg_replace_callback('/<a\b[^>]*>\s*<img\b[^>]*\bdata-rx-sticker(?:\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+))?[^>]*>\s*<\/a>|<img\b[^>]*\bdata-rx-sticker(?:\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+))?[^>]*>/i', array(
+			$this,
+			'stickerDocumentCallback'
+		), $temp_output);
 		if ($temp_output)
 		{
 			$obj = $temp_output;
 		}
+		return $this->createObject();
+	}
+
+	function stickerDocumentCallback($matches)
+	{
+		if(!preg_match('/\bdata-rx-sticker\s*=\s*(["\'])([0-9]+)\|([0-9]+)\1/i', $matches[0], $identity)) return $this->_getStickerDeleteMsg();
+		$output = $this->_getStickerComment((int)$identity[3]);
+		if(!$output->toBool() || empty($output->data) || (int)$output->data->sticker_srl !== (int)$identity[2] || ($output->data->status ?? 'STOP') === 'STOP') return $this->_getStickerDeleteMsg();
+		$width = preg_match('/\bwidth\s*=\s*(["\']?)([0-9]+)\1/i', $matches[0], $size) ? min(100, max(24, (int)$size[2])) : 100;
+		$height = preg_match('/\bheight\s*=\s*(["\']?)([0-9]+)\1/i', $matches[0], $size) ? min(100, max(24, (int)$size[2])) : 100;
+		$is_video = str_ends_with(strtolower((string)$output->data->url), '.mp4');
+		$title = htmlspecialchars((string)$output->data->title, ENT_QUOTES, 'UTF-8');
+		$sticker_url = htmlspecialchars(getUrl(array(
+			'mid' => 'sticker',
+			'sticker_srl' => $output->data->sticker_srl,
+		)), ENT_QUOTES, 'UTF-8');
+		if($is_video){
+			$media = sprintf(
+				'<video src="%s" poster="%s" width="%d" height="%d" autoplay muted loop playsinline preload="metadata" style="width:100%%;height:100%%;display:block" data-rx-sticker="%d|%d" data-rx-sticker-type="video"></video>',
+				htmlspecialchars($output->data->url, ENT_QUOTES, 'UTF-8'),
+				htmlspecialchars(substr($output->data->url, 0, -4) . '.webp', ENT_QUOTES, 'UTF-8'),
+				$width, $height, $output->data->sticker_srl, $output->data->sticker_file_srl
+			);
+		}else{
+			$media = sprintf(
+				'<img src="%s" alt="%s" width="%d" height="%d" style="width:100%%;height:100%%;display:block" data-rx-sticker="%d|%d" data-rx-sticker-type="image">',
+				htmlspecialchars($output->data->url, ENT_QUOTES, 'UTF-8'), $title,
+				$width, $height, $output->data->sticker_srl, $output->data->sticker_file_srl
+			);
+		}
+		return sprintf(
+			'<a href="%s" title="%s" style="display:inline-block;width:%dpx;height:%dpx;vertical-align:middle;line-height:0">%s</a>',
+			$sticker_url, $title, $width, $height, $media
+		);
 	}
 
 	function stickerCommentCallback($matches)

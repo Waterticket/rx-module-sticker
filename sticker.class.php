@@ -73,6 +73,7 @@ class sticker extends ModuleObject
 		$config->file_ext = "jpg,jpeg,png,gif";
 		$config->cmt_allow_modify = "Y";
 		$config->cmt_max_sticker_count = 0;
+		$config->doc_max_sticker_count = 30;
 		$config->notify_message_type = "text";
 
 		$oModuleController->insertModuleConfig('sticker', $config);
@@ -101,7 +102,7 @@ class sticker extends ModuleObject
 	{
 		$oModuleModel = ModuleModel::getInstance();
 		$config = $oModuleModel->getModuleConfig('sticker');
-		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags) || !isset($config->gif2mp4) || !isset($config->notify_message_type)))
+		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags) || !isset($config->gif2mp4) || !isset($config->notify_message_type) || !isset($config->doc_max_sticker_count)))
 		{
 			return true;
 		}
@@ -115,7 +116,7 @@ class sticker extends ModuleObject
 		$oModuleController = ModuleController::getInstance();
 
 		$config = $oModuleModel->getModuleConfig('sticker');
-		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags) || !isset($config->gif2mp4) || !isset($config->notify_message_type)))
+		if ($config && (!isset($config->browser_subtitle) || !isset($config->quick_tags) || !isset($config->gif2mp4) || !isset($config->notify_message_type) || !isset($config->doc_max_sticker_count)))
 		{
 			if (!isset($config->browser_subtitle))
 			{
@@ -132,6 +133,10 @@ class sticker extends ModuleObject
 			if (!isset($config->notify_message_type))
 			{
 				$config->notify_message_type = 'text';
+			}
+			if (!isset($config->doc_max_sticker_count))
+			{
+				$config->doc_max_sticker_count = 30;
 			}
 			$oModuleController->insertModuleConfig('sticker', $config);
 		}

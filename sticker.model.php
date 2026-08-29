@@ -123,6 +123,46 @@ class stickerModel extends sticker
 
 	}
 
+	function getStickerPickerList(){
+		$logged_info = Context::get('logged_info');
+		$member_srl = $logged_info ? $logged_info->member_srl : 0;
+		$config = $this->getConfig();
+		$sticker_array = array();
+		$seen = array();
+
+		foreach(explode(',', $config->default_sticker ?? '') as $sticker_srl){
+			$sticker_srl = trim($sticker_srl);
+			if(!$sticker_srl || isset($seen[$sticker_srl])) continue;
+			$pack = $this->_getPickerPack($sticker_srl);
+			if($pack){
+				$sticker_array[] = $pack;
+				$seen[$sticker_srl] = true;
+			}
+		}
+
+		if($member_srl){
+			$args = new stdClass();
+			$args->page = 1;
+			$args->list_count = 10000;
+			$args->page_count = 1;
+			$args->order_type = 'asc';
+			$args->member_srl = $member_srl;
+			$args->date = date('YmdHis');
+			$output = executeQueryArray('sticker.getStickerMylist', $args);
+			if(!$output->toBool()) return $output;
+			foreach((array)$output->data as $sticker){
+				if(isset($seen[$sticker->sticker_srl])) continue;
+				$pack = $this->_getPickerPack($sticker->sticker_srl);
+				if($pack){
+					$sticker_array[] = $pack;
+					$seen[$sticker->sticker_srl] = true;
+				}
+			}
+		}
+
+		$this->add('sticker', $sticker_array);
+	}
+
 	function getStickerElemList(){
 		$sticker_srl = Context::get('sticker_srl');
 		$logged_info = Context::get('logged_info');
@@ -153,17 +193,89 @@ class stickerModel extends sticker
 			return $this->createObject(-1,'invalid_sticker');
 		}
 		foreach($output->data as $value){
-			$obj = new stdClass();
-			$obj->sticker_file_srl = $value->sticker_file_srl;
-			//$obj->no = $value->no;
-			$name = substr($value->file_name, 0, strrpos($value->file_name, "."));
-			$obj->name = htmlspecialchars($name);
-			$obj->url = $value->url;
-			array_push($stickerImageArray, $obj);
+			array_push($stickerImageArray, $this->_getStickerMedia($value));
 		}
 
 		$this->add("stickerImage", $stickerImageArray);
 
+	}
+
+	function resolveStickers(){
+		$logged_info = Context::get('logged_info');
+		$member_srl = $logged_info ? $logged_info->member_srl : 0;
+		$requested = json_decode((string)Context::get('stickers'), true);
+		if(!is_array($requested)) return $this->createObject(-1, 'invalid_sticker');
+
+		$resolved = array();
+		$seen = array();
+		foreach(array_slice($requested, 0, 200) as $item){
+			$sticker_srl = (int)($item['sticker_srl'] ?? 0);
+			$sticker_file_srl = (int)($item['sticker_file_srl'] ?? 0);
+			$key = $sticker_srl . '|' . $sticker_file_srl;
+			if(!$sticker_srl || !$sticker_file_srl || isset($seen[$key])) continue;
+			$seen[$key] = true;
+			$obj = new stdClass();
+			$obj->sticker_srl = $sticker_srl;
+			$obj->sticker_file_srl = $sticker_file_srl;
+			$obj->valid = false;
+			if(!$this->_canUseSticker($member_srl, $sticker_srl, $logged_info)){
+				$resolved[] = $obj;
+				continue;
+			}
+			$args = new stdClass();
+			$args->sticker_file_srl = $sticker_file_srl;
+			$output = executeQuery('sticker.getStickerByStickerFileSrl', $args);
+			if(!$output->toBool() || empty($output->data) || (int)$output->data->sticker_srl !== $sticker_srl || $output->data->status === 'STOP'){
+				$resolved[] = $obj;
+				continue;
+			}
+			$media = $this->_getStickerMedia($output->data);
+			$obj->valid = true;
+			$obj->title = $output->data->title;
+			$obj->name = $media->name;
+			$obj->type = $media->type;
+			$obj->url = $media->url;
+			$obj->poster = $media->poster;
+			$resolved[] = $obj;
+		}
+
+		$this->add('stickers', $resolved);
+	}
+
+	function _getPickerPack($sticker_srl){
+		$sticker = $this->getSticker($sticker_srl);
+		if(!$sticker || $sticker->status === 'STOP') return false;
+		$args = new stdClass();
+		$args->sticker_srl = $sticker_srl;
+		$args->no = 0;
+		$output = executeQueryArray('sticker.getStickerMainImage', $args);
+		if(!$output->toBool() || empty($output->data[0])) return false;
+		$media = $this->_getStickerMedia($output->data[0]);
+		$obj = new stdClass();
+		$obj->sticker_srl = $sticker->sticker_srl;
+		$obj->title = $sticker->title;
+		$obj->main_image = $media->poster;
+		$obj->type = $media->type;
+		$obj->url = $media->url;
+		$obj->poster = $media->poster;
+		return $obj;
+	}
+
+	function _getStickerMedia($value){
+		$obj = new stdClass();
+		$obj->sticker_srl = $value->sticker_srl ?? null;
+		$obj->sticker_file_srl = $value->sticker_file_srl;
+		$name = pathinfo((string)$value->file_name, PATHINFO_FILENAME);
+		$obj->name = htmlspecialchars($name, ENT_QUOTES, 'UTF-8', false);
+		$obj->type = str_ends_with(strtolower((string)$value->url), '.mp4') ? 'video' : 'image';
+		$obj->url = $value->url;
+		$obj->poster = $obj->type === 'video' ? substr($value->url, 0, -4) . '.webp' : $value->url;
+		return $obj;
+	}
+
+	function _canUseSticker($member_srl, $sticker_srl, $logged_info = null){
+		if($logged_info && ($logged_info->is_admin ?? 'N') === 'Y') return true;
+		return $this->checkDefaultSticker($sticker_srl) || ($member_srl && $this->checkBuySticker($member_srl, $sticker_srl));
 	}
 
 	function getCommentSticekrCountByDocumentSrl($document_srl = 0, $member_srl = 0){

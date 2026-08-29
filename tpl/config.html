@@ -457,6 +457,16 @@
 		</div>
 
 		<div class="x_control-group">
+			<label for="doc_max_sticker_count" class="x_control-label">{$lang->stkr_doc_max_sticker_count}</label>
+			<div class="x_controls">
+				<label class="x_inline" for="doc_max_sticker_count">
+				<input type="number" value="{$config->doc_max_sticker_count}" name="doc_max_sticker_count" id="doc_max_sticker_count" min="0" style="width:50px;"></label>
+				<a href="#doc_max_sticker_count_help" class="x_icon-question-sign" data-toggle="#doc_max_sticker_count_help">{$lang->help}</a>
+				<p id="doc_max_sticker_count_help" class="x_help-block" hidden="hidden">{$lang->cmd_doc_max_sticker_count}</p>
+			</div>
+		</div>
+
+		<div class="x_control-group">
 			<label for="notify_message_type" class="x_control-label">{$lang->stkr_notify_message_type}</label>
 			<div class="x_controls">
 				<select name="notify_message_type" id="notify_message_type">
@@ -513,6 +523,7 @@ jQuery(function($){
 		var file_size = $("#file_size").val() || 0;
 		var file_size_all = $("#file_size_all").val() || 0;
 		var cmt_max_sticker_count = $("#cmt_max_sticker_count").val() || 0;
+		var doc_max_sticker_count = $("#doc_max_sticker_count").val() || 0;
 
 		if(buy_limit && buy_limit < 0){
 			return alert('스티커 최대 보유 개수 제한 숫자 형식이 올바르지 않습니다.'), false;
@@ -552,6 +563,10 @@ jQuery(function($){
 
 		if(cmt_max_sticker_count < 0){
 			return alert('댓글 스티커 등록 제한값이 올바르지 않습니다.'), false;
+		}
+
+		if(doc_max_sticker_count < 0){
+			return alert('문서 스티커 등록 제한값이 올바르지 않습니다.'), false;
 		}
 
 	});

@@ -178,6 +178,15 @@
 	<item name="cmd_cmt_max_sticker_count">
 		<value xml:lang="ko"><![CDATA[1인당 한 문서에 작성할 수 있는 스티커 갯수를 제한합니다. <BR>값이 0일시 제한하지 않습니다.]]></value>
 	</item>
+	<item name="stkr_doc_max_sticker_count">
+		<value xml:lang="ko"><![CDATA[문서당 스티커 제한]]></value>
+	</item>
+	<item name="cmd_doc_max_sticker_count">
+		<value xml:lang="ko"><![CDATA[한 문서에 저장할 수 있는 스티커 개수를 제한합니다. <BR>값이 0이면 제한하지 않습니다.]]></value>
+	</item>
+	<item name="msg_exceed_document_sticker_count">
+		<value xml:lang="ko"><![CDATA[문서에 사용할 수 있는 스티커 개수를 초과했습니다.]]></value>
+	</item>
 
 	<item name="stkr_deleted_sticker">
 		<value xml:lang="ko"><![CDATA[삭제된 스티커 표시 HTML]]></value>

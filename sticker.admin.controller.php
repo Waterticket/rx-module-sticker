@@ -34,6 +34,7 @@ class stickerAdminController extends sticker
 				$config->{$key} = "";
 			}
 		}
+		$config->doc_max_sticker_count = max(0, (int)($config->doc_max_sticker_count ?? 30));
 
 		if(!empty($config->browser_title)){
 			$oModuleModel = ModuleModel::getInstance();
