@@ -39,8 +39,8 @@
 	<item name="cmd_file">
 		<value xml:lang="ko"><![CDATA[파일]]></value>
 	</item>
-	<item name="stk_cmd_comment">
-		<value xml:lang="ko"><![CDATA[댓글]]></value>
+	<item name="stk_cmd_document_and_comment">
+		<value xml:lang="ko"><![CDATA[문서 / 댓글]]></value>
 	</item>
 
 
