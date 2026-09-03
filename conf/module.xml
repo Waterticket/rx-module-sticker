@@ -77,6 +77,7 @@
 		<eventHandler before="moduleHandler.init" class="controller" method="triggerBeforeModuleInit" />
 		<eventHandler before="display" class="controller" method="triggerBeforeDisplay" />
 		<eventHandler before="ncenterlite._insertNotify" class="Controllers\EventHandlers" method="beforeInsertNotify" />
+		<eventHandler before="editor.roundeditor.extensions" class="Controllers\EventHandlers" method="beforeRoundEditorExtensions" />
 	</eventHandlers>
 	<menus>
 		<menu name="sticker" type="all">
